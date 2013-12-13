@@ -1,6 +1,16 @@
-*~
-*.swp
-*.pyc
+# dir
 build/*
 devel/*
-!.gitignore
+!.placeholder
+
+# tmp files
+*.bak
+*.log
+*.old
+*.swp
+*.pyc
+*~
+
+# osx fix
+.DS_Store
+
