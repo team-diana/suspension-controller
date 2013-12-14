@@ -60,6 +60,7 @@ from dynamixel_msgs.msg import MotorStateList
 from dynamixel_msgs.msg import JointState
 from sensor_msgs.msg import JointState as JointStateOut
 from geometry_msgs.msg import WrenchStamped
+from adc.msg import sosp_Adc
 
 class JointController:
     def __init__(self, dxl_io, controller_namespace, port_namespace):
@@ -67,6 +68,10 @@ class JointController:
         self.dxl_io = dxl_io
         self.controller_namespace = controller_namespace
         self.port_namespace = port_namespace
+                
+        self.armOK = False
+        self.arm = ([0.0]*4)
+        
         self.joint_name = rospy.get_param(self.controller_namespace + '/joint_name')
         self.joint_speed = rospy.get_param(self.controller_namespace + '/joint_speed', 1.0)
         self.compliance_slope = rospy.get_param(self.controller_namespace + '/joint_compliance_slope', None)
@@ -117,6 +122,7 @@ class JointController:
         self.command_arm_sub = rospy.Subscriber(self.controller_namespace + '/arm/command', Float64, self.process_arm_command)
         self.command_step_sub = rospy.Subscriber(self.controller_namespace + '/vel_tor/command', Float64, self.process_step_command)
         self.motor_states_sub = rospy.Subscriber('motor_states/%s' % self.port_namespace, MotorStateList, self.process_motor_states)
+        self.arm_states_sub = rospy.Subscriber('/ADC/suspension', sosp_Adc, self.process_arm_states)
 
     def stop(self):
         self.running = False
@@ -128,6 +134,7 @@ class JointController:
         self.command_sub.unregister()
         self.command_arm_sub.unregister()
         self.command_step_sub.unregister()
+        self.arm_states_sub.unregister()
         self.speed_service.shutdown('normal shutdown')
         self.torque_service.shutdown('normal shutdown')
         self.compliance_slope_service.shutdown('normal shutdown')
@@ -185,6 +192,9 @@ class JointController:
         return []
 
     def process_motor_states(self, state_list):
+        raise NotImplementedError
+        
+    def process_arm_states(self, msg):
         raise NotImplementedError
 
     def process_command(self, msg):

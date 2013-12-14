@@ -278,6 +278,9 @@ class JointPositionController(JointController):
                          self.wrench_state.wrench.torque.y = state.load * 6.3
                          self.wrench_state.wrench.force.x = - state.load * 6.3 * 0.20
                 
+                if (self.armOK): #sostituisco posizione con sensori
+                    self.arm_state.error = self.arm_state.current_pos - self.arm[self.motor_id-1]
+                    self.arm_state.current_pos = self.arm[self.motor_id-1]
                 self.arm_state_pub.publish(self.arm_state)  
                 self.joint_state_out_pub.publish(self.joint_state_out)
                 self.wrench_state_pub.publish(self.wrench_state)
@@ -314,3 +317,10 @@ class JointPositionController(JointController):
 #        angle = 3.0
 #        mcv = (self.motor_id, self.pos_rad_to_raw(angle))
 #        self.dxl_io.set_multi_position([mcv])
+
+    def process_arm_states(self, msg):
+        self.armOK = True
+        self.arm[0] = msg.sosp1
+        self.arm[1] = msg.sosp2
+        self.arm[2] = msg.sosp3
+        self.arm[3] = msg.sosp4
