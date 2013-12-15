@@ -64,8 +64,7 @@ import math
 
 class SuspensionController:
     def __init__(self):
-        print("INIT")
-        rospy.init_node('suspension_controller', anonymous=True)
+        rospy.init_node('suspension_controller', anonymous=True, log_level=rospy.DEBUG)
         rospy.on_shutdown(self.on_shutdown)
         
         #rospy.wait_for_service('Moving_Status')
@@ -124,19 +123,23 @@ class SuspensionController:
         
         self.start()
         
+        rospy.loginfo("INIT")
+        
         time.sleep(2) # todo mettere metodo piu' furbo per aspettare messaggi validi dalla scheda adc
         
         #init posizione
         #TODO fare parametrico in base ai dati che arrivano dagli accelerometri circa la posizione dei bracci, se non ricevo dati non fare nulla
         #if self.angoli_sosp[0] < 0.2 && self.angoli_sosp[1] < 0.2 && self.angoli_sosp[2] < 0.2 && self.angoli_sosp[3] < 0.2:
         if False:
+            rospy.loginfo("Start position: sollevato")
             self.init_pos = 0
             self.initializa(0,self.init_pos) # 0 means all
         #elif self.angoli_sosp[0] > 0.9 && self.angoli_sosp[1] > 0.9 && self.angoli_sosp[2] > 0.9 && self.angoli_sosp[3] > 0.9:
+        #    rospy.loginfo("Start position: a terra")
         #    self.init_pos = 1
         #    self.initialize(0,self.init_pos)
         #else:
-        #    print("Init failed")
+        #    rospy.logfatal("Init failed")
         #    TODO STAMPARE ERRORE ed uscire
         #    rospy.signal_shutdown("Init failed")
         #    self.init_ok = True #just in case
@@ -146,12 +149,12 @@ class SuspensionController:
         #       self.init_ok = True
         #        if self.angoli_sosp[i] < 0.2 || self.angoli_sosp[i] > 0.9:
         #           try:
-        #                TODO PRINT WARNING
+        #                rospy.logwarning("Avvio fallito su %i, retry",i)
         #                stop = rospy.ServiceProxy('/motore_' + (i+1) + '_controller/set_torque', SetTorque)
         #                resp = stop(False)
         #               self.initialize(i+1,self.init_pos)
         #            except rospy.ServiceException, e:
-        #                print("Stop service call failed: %s"%e)
+        #                rospy.logerror("Stop service call failed: %s"%e)
         #                self.init_ok = False
         
         #self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray)
@@ -233,6 +236,7 @@ class SuspensionController:
         
     def handle_set_height(self, req):
         self.req_height = req.height + 0.05
+        rospy.loginfo("Altezza settata a %f", req.height)
         return [True]
 
 
@@ -254,6 +258,7 @@ class SuspensionController:
         else:
             response = "Not supported"
             self.mode = 0
+        rospy.loginfo("Mode set to %i", self.mode)
         return [response]
 
     def handle_stopAll(self, req):
@@ -266,13 +271,14 @@ class SuspensionController:
             resp3 = stop3(False)
             stop4 = rospy.ServiceProxy('/motore_4_controller/set_torque', SetTorque)
             resp4 = stop4(False)
+            rospy.loginfo("Sospensioni rilasciate")
             return [resp1.response & resp2.response & resp3.response & resp4.response]
         except rospy.ServiceException, e:
-            print("Stop service call failed: %s"%e)
+            rospy.logerror("Stop service call failed: %s"%e)
         return []
 
     def initializa(self,id,init_pos):
-        print("%d    %d",id,init_pos)
+        rospy.loginfo("Inizializza ruota %d (0 = tutte) da posizione %d (0 alzato, 1 a terra)",id,init_pos)
         
         if init_pos == 0:
             ang_p = 6.28
@@ -291,7 +297,7 @@ class SuspensionController:
             self.command_3_pub.publish(ang_n)  #3 negativa
         if id == 0 or id == 4:
             self.command_4_pub.publish(ang_p)  #4 positiva
-        print("Movimento")
+        rospy.loginfo("Movimento")
         time.sleep(5.0);
         
         if init_pos == 0:
@@ -309,7 +315,7 @@ class SuspensionController:
             self.command_tor3_pub.publish(ang_n)
         if id == 0 or id == 4:
             self.command_tor4_pub.publish(ang_p)
-        print("Step")
+        rospy.loginfo("Step")
         time.sleep(4.0);
         
         if init_pos == 0:
@@ -319,7 +325,7 @@ class SuspensionController:
             ang_p = -3.14
             ang_n = 3.14
         
-        print("Bloccaggio")
+        rospy.loginfo("Bloccaggio")
         for i in range(0,7):
             if id == 0 or id == 1:
                 self.command_1_pub.publish(ang_p)
@@ -428,30 +434,9 @@ class SuspensionController:
         self.angoli_sosp[3] = msg.sosp4
 
 
-#    def process_arm_command(self, msg, ID):
-        #ID = int(msg.motor_ids)
-#        arm_goal[ID] = msg.goal_pos
-#        arm_angle[ID] = msg.current_pos
-#        arm_error[ID] = msg.error
-#        arm_velocity[ID] = msg.velocity
-#        arm_load[ID] = msg.load
-#        self.printa()
-        #print(rospy.get_name() + ": I heard %s" % arm_angle)
-        
-#    def process_motor_states(self, state_list, ID):
-#        if self.running:
-#            state = filter(lambda state: state.id == ID, state_list.motor_states)
-#            if state:
-#                state = state[0]
-#                voltage[ID] = state.voltage
-
-
-#    def printa(self):
-        #print(str(angle[1]) + " " +  str(angle[2]) + " " +  str(angle[3]) + " " +  str(angle[4]))
-#        print(str(voltage[1]) + " " +  str(voltage[2]) + " " +  str(voltage[3]) + " " +  str(voltage[4]))
-
 
     def get_tf(self): 
+        rospy.loginfo("get TF")
         for i in range(0,4):
            try:
                if i == 0:
@@ -464,13 +449,13 @@ class SuspensionController:
                    (trans,rot) = self.listener.lookupTransform('chassis', 'wheel_p_r', rospy.Time(0))
                self.deltaH_chassis[i]= -trans[2] + 0.090
            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-               print('no_info')
+               rospy.logwarn('no_info chassis to wheel %i', i+1)
                self.deltaH_chassis[i]= 0.0
                continue
-           #print('translation: ',trans)
+           #rospy.logdebug('translation: ',trans)
            #angles = euler_from_quaternion(rot)
-           #print('rotation: ',[(180.0/math.pi)*i for i in angles])
-        print('distanza ruote da chassis: ',self.deltaH_chassis)        
+           #rospy.logdebug('rotation: ',[(180.0/math.pi)*i for i in angles])
+        rospy.logdebug("distanza ruote da chassis: %f %f %f %f",self.deltaH_chassis[0],self.deltaH_chassis[1],self.deltaH_chassis[2],self.deltaH_chassis[3])        
         
         
         for i in range(0,4):
@@ -485,27 +470,27 @@ class SuspensionController:
                    (trans,rot) = self.listener.lookupTransform('inertial', 'wheel_p_r', rospy.Time(0))
                self.deltaH_inertial[i]= -trans[2] + 0.090
            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-               print('no_info')
+               rospy.logwarn("no_info inertial to wheel %i", i+1)
                self.deltaH_inertial[i]= 0.0
                continue
-           #print('translation: ',trans)
+           #rospy.logdebug('translation: ',trans)
            #angles = euler_from_quaternion(rot)
-           #print('rotation: ',[(180.0/math.pi)*i for i in angles])
-        print('distanza ruote da inertial: ',self.deltaH_inertial)
+           #rospy.logdebug('rotation: ',[(180.0/math.pi)*i for i in angles])
+        rospy.logdebug("distanza ruote da inertial: %f %f %f %f",self.deltaH_inertial[0],self.deltaH_inertial[1],self.deltaH_inertial[2],self.deltaH_inertial[3])
         self.br.sendTransform( ( 0.0, 0.0, max(self.deltaH_inertial) ), (0.0, 0.0, 0.0, 1.0) , rospy.Time.now(), 'inertial','base_link');
         
         
         try:
             (trans,rot) = self.listener.lookupTransform('base_link', 'chassis', rospy.Time(0))
-            print('posizione chassis: ',trans)
+            rospy.logdebug("posizione chassis: %f %f %f",trans[0],trans[1],trans[2])
             angles = euler_from_quaternion(rot)
-            #print('rotation: ',[(180.0/math.pi)*i for i in angles])
-            print('rotazione chassis: ',angles)
+            #rospy.logdebug('rotation: ',[(180.0/math.pi)*i for i in angles])
+            rospy.logdebug("rotazione chassis: %f %f %f",angles[0],angles[1],angles[2])
             self.altezza=min(0.05 + self.range_front*math.cos(math.fabs(angles[1]))*math.cos(math.fabs(angles[0])),0.05 + self.range_post*math.cos(math.fabs(angles[1]))*math.cos(math.fabs(angles[0])),min(self.deltaH_chassis))
-            print('altezza chassis corretta da range: ', self.altezza -0.05)
-            print('altezza richiesta: ',self.req_height -0.05)
+            rospy.logdebug("altezza chassis corretta da range: %f", self.altezza -0.05)
+            rospy.logdebug("altezza richiesta: %f",self.req_height -0.05)
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            print('no_info') #continue
+            rospy.logwarn("no_info base_link to chassis") #continue
             angles = [0,0,0]
             trans = [0,0,0]
             self.altezza = 0
@@ -525,17 +510,17 @@ class SuspensionController:
                    (trans,rot) = self.listener.lookupTransform('base_link', 'wheel_p_r', rospy.Time(0))
                self.Z_ruote[i]= trans[2]
            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-               print('no_info')
+               rospy.logwarn("no_info base_link to wheel %i",i+1)
                self.Z_ruote[i]= 0.0
                continue
-           #print('translation: ',trans)
+           #rospy.logdebug('translation: ',trans)
            #angles = euler_from_quaternion(rot)
-           #print('rotation: ',[(180.0/math.pi)*i for i in angles])
-        print('distanza ruote da base_link: ',self.Z_ruote)
+           #rospy.logdebug('rotation: ',[(180.0/math.pi)*i for i in angles])
+        rospy.logdebug("distanza ruote da base_link: %f %f %f %f",self.Z_ruote[0],self.Z_ruote[1],self.Z_ruote[2],self.Z_ruote[3])
         
         
         self.deltaH_chassis_virtuale = self.req_height -  self.altezza
-        print('distanza da inertial a chassis virtuale: ',self.deltaH_chassis_virtuale)
+        rospy.logdebug("distanza da inertial a chassis virtuale: %f",self.deltaH_chassis_virtuale)
         self.joint_state_out.name = []
         self.joint_state_out.position = []
         self.joint_state_out.velocity = []
@@ -564,12 +549,12 @@ class SuspensionController:
         
         try:
             (trans,rot) = self.listener.lookupTransform('base_link', 'chassis_virtuale', rospy.Time(0))
-            print(  'posizione chassis_virtuale: ',trans)
+            rospy.logdebug("posizione chassis_virtuale: %f %f %f",trans[0],trans[1],trans[2])
             angles = euler_from_quaternion(rot)
-            #print('rotation: ',[(180.0/math.pi)*i for i in angles])
-            print('rotazione chassis_virtuale: ',angles)
+            #rospy.logdebug('rotation: ',[(180.0/math.pi)*i for i in angles])
+            rospy.logdebug("angoli chassis_virtuale: %f %f %f",angles[0],angles[1],angles[2])
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            print('no_info') #continue)
+            rospy.logwarn('no_info base_link toi chassis_virtuale') #continue)
             angles = [0,0,0]
             trans = [0,0,0]
         self.angoli_chassis_virtuale = angles
@@ -587,9 +572,9 @@ class SuspensionController:
 #               elif i == 3:
 #                   (trans,rot) = self.listener.lookupTransform('inertial', 'leg_p_r', rospy.Time(0))
 #               self.deltaH_hub[i]= -trans[2]
-#               print('distanza hub da inertial: ',self.deltaH_hub)
+#               rospy.logdebug('distanza hub da inertial: ',self.deltaH_hub)
 #           except (tf.LookupException, tf.ConnectivityException):
-#               print('no_info')
+#               rospy.logwarn('no_info')
 #               self.deltaH_hub[i]= 0.0
 #               continue
 
@@ -608,7 +593,7 @@ class SuspensionController:
                 try:
                    self.fi[i]=math.acos(( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20)
                 except (ValueError):
-                   print('out_of_range')
+                   rospy.logwarn("out_of_range on wheel %i",i)
                    if (( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20) > 1:
                       self.fi[i]=0.09
                    elif (( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20) < 0:
@@ -630,8 +615,7 @@ class SuspensionController:
                 self.joint_state_out.header.stamp = rospy.Time.now()  
                 self.joint_state_out_pub.publish(self.joint_state_out)
                 
-        print('angolo virtuale: ',self.fi)
-        print('---------------')
+        rospy.loginfo("angolo virtuale: %f %f %f %f",self.fi[0],self.fi[1],self.fi[2],self.fi[3])
         
         
     def output_fi(self):
@@ -678,12 +662,12 @@ class SuspensionController:
 #                   print('---------------')
 
     def pull_down(self):
-        print('coppie',self.torque)
+        rospy.logdebug("Coppie: %f %f %f %f",self.torque[0],self.torque[1],self.torque[2],self.torque[3])
         if min(self.torque) < 0.1:
             for i in range(0,4):
                 if self.torque[i] < 0.1:
                     self.pull_down_sts[i] = True
-                    print('coppia motore',i+1,' ',self.torque[i],self.pos_arm[i] - 0.1)
+                    rospy.logdebug("Coppia motore %i %f -> comando posizione %f",i+1,self.torque[i],self.pos_arm[i]-0.1)
                     phi = self.pos_arm[i] - 0.1
                     if phi < 0.10: 
                         phi = 0.10
@@ -721,8 +705,7 @@ class SuspensionController:
                 else:
                     self.pull_down_sts[i] = False
                 
-            print('recovery ruota sollevata')
-            print('---------------')
+            rospy.loginfo('Recovery ruota sollevata')
 
     def follower(self):
         step = 0.0
@@ -764,8 +747,7 @@ class SuspensionController:
         if ok == True:
             self.delta = ([0.0]*4)
             
-        print('delta: ',self.delta)
-        print('---------------')
+        rospy.loginfo("Delta follower: %f %f %f %f",self.delta[0],self.delta[1],self.delta[2],self.delta[3])
             
     
     def set_status(self):
@@ -818,8 +800,7 @@ class SuspensionController:
 
 
     
-    def main(self):    
-        print("TF")
+    def main(self):
         
         count = 0
         
