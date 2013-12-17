@@ -25,6 +25,7 @@ import roslib
 from suspension_controller.srv import set_mode
 from suspension_controller.srv import set_height
 from suspension_controller.srv import stopAll
+from suspension_controller.srv import freeze
 from dynamixel_controllers.srv import SetTorque
 from adc.srv import movingService
 
@@ -113,6 +114,7 @@ class SuspensionController:
         self.req_height_temp = 0.25
         self.recovery_height = False
         self.mode = 0
+        self.freeze = False
         
         self.pointer = ([0]*4)
         
@@ -206,6 +208,7 @@ class SuspensionController:
         self.service_height = rospy.Service('suspension_controller/set_height', set_height, self.handle_set_height)
         self.service_mode = rospy.Service('suspension_controller/set_mode', set_mode, self.handle_set_mode)
         self.service_stop = rospy.Service('suspension_controller/stop_all', stopAll, self.handle_stopAll)
+        self.service_freeze = rospy.Service('suspension_controller/freeze', freeze, self.handle_freeze)
 
     def stop(self):
         self.running = False
@@ -276,6 +279,16 @@ class SuspensionController:
         except rospy.ServiceException, e:
             rospy.logerror("Stop service call failed: %s"%e)
         return []
+        
+    def handle_freeze(self, req):
+        self.freeze = req.freeze
+        rospy.loginfo("Richiesta freeze %b", self.freeze)
+        if self.freeze:
+            self.get_tf()
+            self.calculate_fi()
+            self.delta = ([0.0]*4)
+            self.output_fi()
+        return [self.freeze]
 
     def initializa(self,id,init_pos):
         rospy.loginfo("Inizializza ruota %d (0 = tutte) da posizione %d (0 alzato, 1 a terra)",id,init_pos)
@@ -301,7 +314,7 @@ class SuspensionController:
         time.sleep(5.0);
         
         if init_pos == 0:
-            ang_p = 0.5
+            ang_p = 0.5         #è una velocità!
             ang_n = -0.5
         else:
             ang_p = -0.5
@@ -804,53 +817,51 @@ class SuspensionController:
         
         count = 0
         
-        #rate = rospy.Rate(10.0)
         while not rospy.is_shutdown():
             
-            if self.mode == 0: # solo simulazione
-                self.get_tf()
-                self.calculate_fi()
-                #print("coppia",self.torque)
-            elif self.mode == 1: # solo inseguitore
-                self.get_tf()
-                #if count%10 == 0:
-                self.follower()
-                self.output_fi()
-            elif self.mode == 2: # solo SIL
-                self.get_tf()
-                self.calculate_fi()
-                self.delta = ([0.0]*4)
-                self.output_fi()
-            elif self.mode == 3: # SIL + anti sollevamento
-                self.pull_down()
-                self.get_tf()
-                self.calculate_fi()
-                self.delta = ([0.0]*4)
-                self.output_fi()
-            elif self.mode == 4: # SIL + inseguitore
-                self.get_tf()
-                self.follower()
-                if count%40 == 0:
+            if not self.freeze:
+                if self.mode == 0: # solo simulazione
+                    self.get_tf()
                     self.calculate_fi()
-                self.output_fi()
-            elif self.mode == 5: # SIL + inseguitore + anti soll
-                self.pull_down()
-                self.get_tf()
-                self.follower()
-                if count%40 == 0:
+                    #print("coppia",self.torque)
+                elif self.mode == 1: # solo inseguitore
+                    self.get_tf()
+                    #if count%10 == 0:
+                    self.follower()
+                    self.output_fi()
+                elif self.mode == 2: # solo SIL
+                    self.get_tf()
                     self.calculate_fi()
-                self.output_fi()
+                    self.delta = ([0.0]*4)
+                    self.output_fi()
+                elif self.mode == 3: # SIL + anti sollevamento
+                    self.pull_down()
+                    self.get_tf()
+                    self.calculate_fi()
+                    self.delta = ([0.0]*4)
+                    self.output_fi()
+                elif self.mode == 4: # SIL + inseguitore
+                    self.get_tf()
+                    self.follower()
+                    if count%40 == 0:
+                        self.calculate_fi()
+                    self.output_fi()
+                elif self.mode == 5: # SIL + inseguitore + anti soll
+                    self.pull_down()
+                    self.get_tf()
+                    self.follower()
+                    if count%40 == 0:
+                        self.calculate_fi()
+                    self.output_fi()
                 
             #TODO algoritmo suddivisione carico
-            
-            #TODO algoritmo anti sollevamento
             
             #TODO algortimo bloccante superamento ostacoli
             
             #TODO da sincronizzare poi con i motori
             # if count%40 == 0:
                 # try:
-                    # add_two_ints = rospy.ServiceProxy('Moving_Status', isMoving)
+                    # Moving_Status = rospy.ServiceProxy('Moving_Status', isMoving)
                     # resp1 = Moving_Status(False)
                     # return resp1
                 # except rospy.ServiceException, e:
@@ -859,7 +870,7 @@ class SuspensionController:
                 # time.sleep(0.500)
                 
                 # try:
-                    # add_two_ints = rospy.ServiceProxy('Moving_Status', isMoving)
+                    # Moving_Status = rospy.ServiceProxy('Moving_Status', isMoving)
                     # resp1 = Moving_Status(True)
                     # return resp1
                 # except rospy.ServiceException, e:
@@ -877,4 +888,3 @@ if __name__ == '__main__':
         SuspensionController()
         rospy.spin()
     except rospy.ROSInterruptException: pass
-
