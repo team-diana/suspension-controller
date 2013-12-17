@@ -52,6 +52,7 @@ catkin_python_setup()
    set_height.srv
    set_mode.srv
    stopAll.srv
+   freeze.srv
  )
 
 ## Generate actions in the 'action' folder
