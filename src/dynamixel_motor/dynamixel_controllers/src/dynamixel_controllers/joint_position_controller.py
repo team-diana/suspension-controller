@@ -121,9 +121,9 @@ class JointPositionController(JointController):
         if self.compliance_punch is not None: self.set_compliance_punch(self.compliance_punch)
         if self.torque_limit is not None: self.set_torque_limit(self.torque_limit)
         
-        self.dxl_io.set_d_gain(self.motor_id, 40)
-        self.dxl_io.set_i_gain(self.motor_id, 20)
-        self.dxl_io.set_p_gain(self.motor_id, 100)
+        self.dxl_io.set_d_gain(self.motor_id, 0)  #40
+        self.dxl_io.set_i_gain(self.motor_id, 2)  #20
+        self.dxl_io.set_p_gain(self.motor_id, 5) #100
         
         self.joint_max_speed = rospy.get_param(self.controller_namespace + '/joint_max_speed', self.MAX_VELOCITY)
         

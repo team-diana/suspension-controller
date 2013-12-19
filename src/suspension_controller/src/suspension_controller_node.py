@@ -288,6 +288,8 @@ class SuspensionController:
             self.calculate_fi()
             self.delta = ([0.0]*4)
             self.output_fi()
+            while min(self.torque) < 0.1 :
+                self.pull_down()
         return [self.freeze]
 
     def initializa(self,id,init_pos):
@@ -314,7 +316,7 @@ class SuspensionController:
         time.sleep(5.0);
         
         if init_pos == 0:
-            ang_p = 0.5 #Ã¨ una velocitÃ !
+            ang_p = 0.5 #è una velocità!
             ang_n = -0.5
         else:
             ang_p = -0.5
@@ -606,7 +608,7 @@ class SuspensionController:
                 try:
                    self.fi[i]=math.acos(( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20)
                 except (ValueError):
-                   rospy.logwarn("out_of_range on wheel %i",i)
+                   rospy.logwarn("out_of_range on wheel %i",i+1)
                    if (( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20) > 1:
                       self.fi[i]=0.09
                    elif (( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20) < 0:
@@ -634,27 +636,35 @@ class SuspensionController:
     def output_fi(self):
         #self.recovery = 0
         for i in range(0,4):
-            phi = self.fi[i] + self.delta[i]
-            if phi < 0.10:
-                 phi = 0.10
-                 self.out_of_range_sts[i] = True
-                 #self.recovery += 1
-            elif phi > 1.06:
-                 phi = 1.06
-                 self.out_of_range_sts[i] = True
-                 #self.recovery += 1
-            else:
-                self.out_of_range_sts[i] = False
-                  
-            if i == 0:
-                self.command_arm1_pub.publish(phi)
-            elif i == 1:
-                self.command_arm2_pub.publish(phi)
-            elif i == 2:
-                self.command_arm3_pub.publish(phi)
-            elif i == 3:
-                self.command_arm4_pub.publish(phi)
-            
+            if (self.pull_down_sts[i] == False):
+                phi = self.fi[i] + self.delta[i]
+                if phi < 0.10:
+                     phi = 0.10
+                     self.out_of_range_sts[i] = True
+                     #self.recovery += 1
+                elif phi > 1.06:
+                     phi = 1.06
+                     self.out_of_range_sts[i] = True
+                     #self.recovery += 1
+                else:
+                    self.out_of_range_sts[i] = False
+                
+                if self.torque[i] > 3.9:
+                    rospy.logwarn("Limite coppia su %i!", i+1)
+                    phi = phi + 0.1
+                
+                if i == 0:
+                    self.command_arm1_pub.publish(phi)
+                elif i == 1:
+                    self.command_arm2_pub.publish(phi)
+                elif i == 2:
+                    self.command_arm3_pub.publish(phi)
+                elif i == 3:
+                    self.command_arm4_pub.publish(phi)
+                    
+                if self.torque[i] > 3.9:
+                    time.sleep(0.5)
+
 # if self.recovery == 3:
 # print('attivata recovery altezza')
 # print('---------------')
@@ -676,19 +686,18 @@ class SuspensionController:
 
     def pull_down(self):
         rospy.logdebug("Coppie: %f %f %f %f",self.torque[0],self.torque[1],self.torque[2],self.torque[3])
-        if min(self.torque) < 0.6:
+        if min(self.torque) < 0.1:
+            rospy.loginfo('Recovery ruota sollevata')
             for i in range(0,4):
-                if self.torque[i] < 0.6:
+                if self.torque[i] < 0.1:
                     self.pull_down_sts[i] = True
-                    rospy.logdebug("Coppia motore %i %f -> comando posizione %f",i+1,self.torque[i],self.pos_arm[i]-0.1)
-                    phi = self.pos_arm[i] - 0.1
+                    phi = self.pos_arm[i] - 0.5
                     if phi < 0.10:
                         phi = 0.10
-                        break
                     elif phi > 1.06:
-                        phi = 1.06
-                        break
-                          
+                        phi = 0.90
+                    
+                    rospy.logdebug("Coppia motore %i %f -> comando posizione %f",i+1,self.torque[i],phi)
                     if i == 0:
                         self.command_arm1_pub.publish(phi)
                     elif i == 1:
@@ -697,7 +706,7 @@ class SuspensionController:
                         self.command_arm3_pub.publish(phi)
                     elif i == 3:
                         self.command_arm4_pub.publish(phi)
-                
+                    
                     self.joint_state_out.name = []
                     self.joint_state_out.position = []
                     self.joint_state_out.velocity = []
@@ -713,12 +722,9 @@ class SuspensionController:
                     self.joint_state_out.position.append(phi)
                     self.joint_state_out.header.stamp = rospy.Time.now()
                     self.joint_state_out_pub.publish(self.joint_state_out)
-                    
-                    time.sleep(0.1)
                 else:
                     self.pull_down_sts[i] = False
-                
-            rospy.loginfo('Recovery ruota sollevata')
+            time.sleep(0.1)
 
     def follower(self):
         step = 0.0
