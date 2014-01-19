@@ -223,7 +223,7 @@ class JointPositionController(JointController):
                 self.joint_state_out.effort = []
                 if self.motor_id == 1 or self.motor_id == 4:  
                     self.arm_state.motor_temps = [state.temperature]
-                    self.joint_state_out.position.append(self.arm_state.current_pos)
+                    
                     self.arm_state.error = state.error * self.RADIANS_PER_ENCODER_TICK / 6.3
                     self.arm_state.velocity = (state.speed / DXL_MAX_SPEED_TICK) * self.MAX_VELOCITY / 6.3
                     self.joint_state_out.velocity.append(self.arm_state.velocity)
@@ -251,7 +251,7 @@ class JointPositionController(JointController):
                          self.wrench_state.wrench.force.x = - state.load * 6.3 * 0.20
                 else:    
                     self.arm_state.motor_temps = [state.temperature]
-                    self.joint_state_out.position.append(self.arm_state.current_pos)
+                    
                     self.arm_state.error = state.error * self.RADIANS_PER_ENCODER_TICK / 6.3
                     self.arm_state.velocity = - (state.speed / DXL_MAX_SPEED_TICK) * self.MAX_VELOCITY / 6.3
                     self.joint_state_out.velocity.append(self.arm_state.velocity)
@@ -281,6 +281,7 @@ class JointPositionController(JointController):
                 if (self.armOK): #sostituisco posizione con sensori
                     self.arm_state.error = self.arm_state.current_pos - self.arm[self.motor_id-1]
                     self.arm_state.current_pos = self.arm[self.motor_id-1]
+                    self.joint_state_out.position.append(self.arm_state.current_pos)
                 self.arm_state_pub.publish(self.arm_state)  
                 self.joint_state_out_pub.publish(self.joint_state_out)
                 self.wrench_state_pub.publish(self.wrench_state)

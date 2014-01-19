@@ -98,6 +98,7 @@ class SuspensionController:
            self.torquef.append([0]*21)
         
         self.pos_arm = ([0.0]*4)
+        self.error_arm = ([0.0]*4)
         
         self.pull_down_sts = ([False]*4)
         self.out_of_range_sts = ([False]*4)
@@ -316,7 +317,7 @@ class SuspensionController:
         time.sleep(5.0);
         
         if init_pos == 0:
-            ang_p = 0.5 #è una velocità!
+            ang_p = 0.5 #una velocita'!
             ang_n = -0.5
         else:
             ang_p = -0.5
@@ -405,6 +406,7 @@ class SuspensionController:
         
         self.torque[0] = self.torquef[0][20]
         self.pos_arm[0] = msg.current_pos
+        self.error_arm[0] = msg.error
         
     def process_arm_2(self, msg):
         self.torquef[1][self.pointer[1]] = msg.load
@@ -417,6 +419,7 @@ class SuspensionController:
         
         self.torque[1] = self.torquef[1][20]
         self.pos_arm[1] = msg.current_pos
+        self.error_arm[1] = msg.error
         
     def process_arm_3(self, msg):
         self.torquef[2][self.pointer[2]] = msg.load
@@ -429,6 +432,7 @@ class SuspensionController:
         
         self.torque[2] = self.torquef[2][20]
         self.pos_arm[2] = msg.current_pos
+        self.error_arm[2] = msg.error
         
     def process_arm_4(self, msg):
         self.torquef[3][self.pointer[3]] = msg.load
@@ -441,6 +445,7 @@ class SuspensionController:
         
         self.torque[3] = self.torquef[3][20]
         self.pos_arm[3] = msg.current_pos
+        self.error_arm[3] = msg.error
         
     def process_suspension(self, msg):
         self.angoli_sosp[0] = msg.sosp1
@@ -770,11 +775,14 @@ class SuspensionController:
             
     
     def set_status(self):
-        #TODO aggiungere posizione da imu sospensioni
-        self.status_asm.mot_pos_1 = self.pos_arm[0]
-        self.status_asm.mot_pos_2 = self.pos_arm[1]
-        self.status_asm.mot_pos_3 = self.pos_arm[2]
-        self.status_asm.mot_pos_4 = self.pos_arm[3]
+        self.status_asm.pos_1 = self.pos_arm[0]
+        self.status_asm.pos_2 = self.pos_arm[1]
+        self.status_asm.pos_3 = self.pos_arm[2]
+        self.status_asm.pos_4 = self.pos_arm[3]
+        self.status_asm.mot_pos_1 = self.pos_arm[0] + self.error_arm[0]
+        self.status_asm.mot_pos_2 = self.pos_arm[1] + self.error_arm[1]
+        self.status_asm.mot_pos_3 = self.pos_arm[2] + self.error_arm[2]
+        self.status_asm.mot_pos_4 = self.pos_arm[3] + self.error_arm[3]
         self.status_asm.command_1 = self.fi[0]
         self.status_asm.command_2 = self.fi[1]
         self.status_asm.command_3 = self.fi[2]
