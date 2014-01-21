@@ -46,6 +46,8 @@ import rospy
 
 import time
 
+import math
+
 from dynamixel_driver.dynamixel_const import *
 from dynamixel_controllers.joint_controller import JointController
 
@@ -115,6 +117,8 @@ class JointPositionController(JointController):
         self.VELOCITY_PER_TICK = rospy.get_param('dynamixel/%s/%d/radians_second_per_encoder_tick' % (self.port_namespace, self.motor_id))
         self.MAX_VELOCITY = rospy.get_param('dynamixel/%s/%d/max_velocity' % (self.port_namespace, self.motor_id))
         self.MIN_VELOCITY = self.VELOCITY_PER_TICK
+        
+        #TODO inserire qui i valori ottimati ricavati per la slope e valore massimo per torque limit se necessario
         
         if self.compliance_slope is not None: self.set_compliance_slope(self.compliance_slope)
         if self.compliance_margin is not None: self.set_compliance_margin(self.compliance_margin)
@@ -300,7 +304,14 @@ class JointPositionController(JointController):
              angle = (msg.data - 0.07) * 6.3     
         else:    
              angle = (msg.data - 1.07) * 6.3
-
+        
+        current_pos = self.joint_state.current_pos #self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)
+        threshold = 20*(2*math.pi)/360  #conversione da gradi a radianti della soglia
+        modulated_speed = self.old_speed*(math.fabs(angle-current_pos)*threshold)   #modula da 0 a soglia e poi satura
+        if modulated_speed < self.MIN_VELOCITY: modulated_speed = self.MIN_VELOCITY
+        elif modulated_speed > self.old_speed: modulated_speed = self.old_speed
+        self.set_speed(modulated_speed)
+        
         mcv = (self.motor_id, self.pos_rad_to_raw(angle))
         self.dxl_io.set_multi_position([mcv])
 
