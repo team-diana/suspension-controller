@@ -615,9 +615,9 @@ class SuspensionController:
                 except (ValueError):
                    rospy.logwarn("out_of_range on wheel %i",i+1)
                    if (( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20) > 1:
-                      self.fi[i]=0.09
+                      self.fi[i]=0.39
                    elif (( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20) < 0:
-                      self.fi[i]=1.07
+                      self.fi[i]=1.22
                    continue
                 self.joint_state_out.name = []
                 self.joint_state_out.position = []
@@ -643,12 +643,12 @@ class SuspensionController:
         for i in range(0,4):
             if (self.pull_down_sts[i] == False):
                 phi = self.fi[i] + self.delta[i]
-                if phi < 0.10:
-                     phi = 0.10
+                if phi < 0.40:
+                     phi = 0.40
                      self.out_of_range_sts[i] = True
                      #self.recovery += 1
-                elif phi > 1.06:
-                     phi = 1.06
+                elif phi > 1.21:
+                     phi = 1.21
                      self.out_of_range_sts[i] = True
                      #self.recovery += 1
                 else:
@@ -697,10 +697,10 @@ class SuspensionController:
                 if self.torque[i] < 0.1:
                     self.pull_down_sts[i] = True
                     phi = self.pos_arm[i] - 0.5
-                    if phi < 0.10:
-                        phi = 0.10
-                    elif phi > 1.06:
-                        phi = 0.90
+                    if phi < 0.40:
+                        phi = 0.40
+                    elif phi > 1.21:
+                        phi = 1.00
                     
                     rospy.logdebug("Coppia motore %i %f -> comando posizione %f",i+1,self.torque[i],phi)
                     if i == 0:

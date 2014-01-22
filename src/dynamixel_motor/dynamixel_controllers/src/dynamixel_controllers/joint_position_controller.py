@@ -238,16 +238,18 @@ class JointPositionController(JointController):
                     self.wrench_state.header.stamp = rospy.Time.from_sec(state.timestamp)
                     self.joint_state_out.header.stamp = rospy.Time.now()
                     if self.motor_id == 1:
-                         self.arm_state.goal_pos = self.raw_to_rad(state.goal, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK) / 6.3 + 0.052
-                         self.arm_state.current_pos = self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK) / 6.3 + 0.052
+                         zero = (2.0*3.1416-4.6571)/6.3
+                         self.arm_state.goal_pos = self.raw_to_rad(state.goal, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK) / 6.3 + zero
+                         self.arm_state.current_pos = self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK) / 6.3 + zero
                          self.arm_state.name = "hub_f_l"
                          self.joint_state_out.name.append(self.arm_state.name)
                          self.wrench_state.header.frame_id  = "leg_f_l"
                          self.wrench_state.wrench.torque.y = state.load * 6.3
                          self.wrench_state.wrench.force.x = state.load * 6.3 * 0.20
                     if self.motor_id == 4:
-                         self.arm_state.goal_pos = self.raw_to_rad(state.goal, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK) / 6.3 + 0.104
-                         self.arm_state.current_pos = self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK) / 6.3 + 0.104
+                         zero = (2.0*3.1416-3.9178)/6.3
+                         self.arm_state.goal_pos = self.raw_to_rad(state.goal, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK) / 6.3 + zero
+                         self.arm_state.current_pos = self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK) / 6.3 + zero
                          self.arm_state.name = "hub_p_r"
                          self.joint_state_out.name.append(self.arm_state.name)
                          self.wrench_state.header.frame_id = "leg_p_r"
@@ -266,16 +268,18 @@ class JointPositionController(JointController):
                     self.wrench_state.header.stamp = rospy.Time.from_sec(state.timestamp)
                     self.joint_state_out.header.stamp = rospy.Time.now()
                     if self.motor_id == 2:
-                         self.arm_state.goal_pos = (6.28 + self.raw_to_rad(state.goal, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)) / 6.3 + 0.087
-                         self.arm_state.current_pos = (6.28 +  self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)) / 6.3 + 0.087
+                         zero = -(-2.0831)/6.3
+                         self.arm_state.goal_pos = (6.2832 + self.raw_to_rad(state.goal, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)) / 6.3 + zero
+                         self.arm_state.current_pos = (6.2832 +  self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)) / 6.3 + zero
                          self.arm_state.name = "hub_p_l"
                          self.joint_state_out.name.append(self.arm_state.name)
                          self.wrench_state.header.frame_id = "leg_p_l"
                          self.wrench_state.wrench.torque.y = - state.load * 6.3
                          self.wrench_state.wrench.force.x = state.load * 6.3 * 0.20
                     if self.motor_id == 3:
-                         self.arm_state.goal_pos = (6.28 +  self.raw_to_rad(state.goal, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)) / 6.3 + 0.070
-                         self.arm_state.current_pos = (6.28 +  self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)) / 6.3 + 0.070
+                         zero = -(-2.2733)/6.3
+                         self.arm_state.goal_pos = (6.2832 +  self.raw_to_rad(state.goal, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)) / 6.3 + zero
+                         self.arm_state.current_pos = (6.2832 +  self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)) / 6.3 + zero
                          self.arm_state.name = "hub_f_r"
                          self.joint_state_out.name.append(self.arm_state.name)
                          self.wrench_state.header.frame_id = "leg_f_r"
@@ -300,10 +304,18 @@ class JointPositionController(JointController):
         self.dxl_io.set_multi_position([mcv])
 
     def process_arm_command(self, msg):
-        if self.motor_id == 1 or self.motor_id == 4:
-             angle = (msg.data - 0.07) * 6.3     
-        else:    
-             angle = (msg.data - 1.07) * 6.3
+        if self.motor_id == 1:
+             zero = (2.0*3.1416-4.6571)/6.3
+             angle = (msg.data - zero) * 6.3  
+        if self.motor_id == 2:
+             zero = -(-2.0831)/6.3 + (2.0*3.1416)/6.3
+             angle = (msg.data - zero) * 6.3 
+        if self.motor_id == 3:
+             zero = -(-2.2733)/6.3 + (2.0*3.1416)/6.3
+             angle = (msg.data - zero) * 6.3 
+        if self.motor_id == 4:
+             zero = (2.0*3.1416-3.9178)/6.3
+             angle = (msg.data - zero) * 6.3    
         
         current_pos = self.joint_state.current_pos #self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)
         threshold = 20*(2*math.pi)/360  #conversione da gradi a radianti della soglia
