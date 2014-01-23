@@ -99,6 +99,7 @@ class SuspensionController:
         
         self.pos_arm = ([0.0]*4)
         self.error_arm = ([0.0]*4)
+        self.motor_temp = ([0.0]*4)
         
         self.pull_down_sts = ([False]*4)
         self.out_of_range_sts = ([False]*4)
@@ -407,6 +408,7 @@ class SuspensionController:
         self.torque[0] = self.torquef[0][20]
         self.pos_arm[0] = msg.current_pos
         self.error_arm[0] = msg.error
+        self.motor_temp[0] = msg.temperature
         
     def process_arm_2(self, msg):
         self.torquef[1][self.pointer[1]] = msg.load
@@ -420,6 +422,7 @@ class SuspensionController:
         self.torque[1] = self.torquef[1][20]
         self.pos_arm[1] = msg.current_pos
         self.error_arm[1] = msg.error
+        self.motor_temp[1] = msg.temperature
         
     def process_arm_3(self, msg):
         self.torquef[2][self.pointer[2]] = msg.load
@@ -433,6 +436,7 @@ class SuspensionController:
         self.torque[2] = self.torquef[2][20]
         self.pos_arm[2] = msg.current_pos
         self.error_arm[2] = msg.error
+        self.motor_temp[2] = msg.temperature
         
     def process_arm_4(self, msg):
         self.torquef[3][self.pointer[3]] = msg.load
@@ -446,6 +450,7 @@ class SuspensionController:
         self.torque[3] = self.torquef[3][20]
         self.pos_arm[3] = msg.current_pos
         self.error_arm[3] = msg.error
+        self.motor_temp[3] = msg.temperature
         
     def process_suspension(self, msg):
         self.angoli_sosp[0] = msg.sosp1
@@ -805,6 +810,11 @@ class SuspensionController:
         #TODO inserire is_moving ed abilitare il reset del filtro
         
         #TODO inserire temperature e lettura delle stesse
+        
+        self.status_asm.motor_1_temp = self.motor_temp[0]
+        self.status_asm.motor_2_temp = self.motor_temp[1]
+        self.status_asm.motor_3_temp = self.motor_temp[2]
+        self.status_asm.motor_4_temp = self.motor_temp[3]
         
         self.status_asm.load_1 = self.torque[0]
         self.status_asm.load_2 = self.torque[1]
