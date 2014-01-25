@@ -253,8 +253,10 @@ class SuspensionController:
         elif req.mode == 1:
             response = "Inseguitore"
         elif req.mode == 2:
+            self.delta = ([0.0]*4)
             response = "Osservatore"
         elif req.mode == 3:
+            self.delta = ([0.0]*4)
             response = "Osservatore + antisollevamento"
         elif req.mode == 4:
             response = "Osservatore + inseguitore"
@@ -772,9 +774,6 @@ class SuspensionController:
             self.delta[1] -= step/10 * math.fabs(roll-limit)/limit
         else:
             ok = True
-        
-        if ok == True:
-            self.delta = ([0.0]*4)
             
         rospy.loginfo("Delta follower: %f %f %f %f",self.delta[0],self.delta[1],self.delta[2],self.delta[3])
             
