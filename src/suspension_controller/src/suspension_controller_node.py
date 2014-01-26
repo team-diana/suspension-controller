@@ -249,16 +249,20 @@ class SuspensionController:
         self.mode = req.mode
         response = []
         if req.mode == 0:
+            self.delta = ([0.0]*4)
             response = "Simulazione"
         elif req.mode == 1:
+            self.pull_down_sts = ([False]*4)
             response = "Inseguitore"
         elif req.mode == 2:
             self.delta = ([0.0]*4)
+            self.pull_down_sts = ([False]*4)
             response = "Osservatore"
         elif req.mode == 3:
             self.delta = ([0.0]*4)
             response = "Osservatore + antisollevamento"
         elif req.mode == 4:
+            self.pull_down_sts = ([False]*4)
             response = "Osservatore + inseguitore"
         elif req.mode == 5:
             response = "Osservatore + inseguitore + antisollevamento"
@@ -410,7 +414,7 @@ class SuspensionController:
         self.torque[0] = self.torquef[0][20]
         self.pos_arm[0] = msg.current_pos
         self.error_arm[0] = msg.error
-        self.motor_temp[0] = msg.temperature
+        self.motor_temp[0] = int(msg.motor_temps[0])
         
     def process_arm_2(self, msg):
         self.torquef[1][self.pointer[1]] = msg.load
@@ -424,7 +428,7 @@ class SuspensionController:
         self.torque[1] = self.torquef[1][20]
         self.pos_arm[1] = msg.current_pos
         self.error_arm[1] = msg.error
-        self.motor_temp[1] = msg.temperature
+        self.motor_temp[1] = int(msg.motor_temps[0])
         
     def process_arm_3(self, msg):
         self.torquef[2][self.pointer[2]] = msg.load
@@ -438,7 +442,7 @@ class SuspensionController:
         self.torque[2] = self.torquef[2][20]
         self.pos_arm[2] = msg.current_pos
         self.error_arm[2] = msg.error
-        self.motor_temp[2] = msg.temperature
+        self.motor_temp[2] = int(msg.motor_temps[0])
         
     def process_arm_4(self, msg):
         self.torquef[3][self.pointer[3]] = msg.load
@@ -452,7 +456,7 @@ class SuspensionController:
         self.torque[3] = self.torquef[3][20]
         self.pos_arm[3] = msg.current_pos
         self.error_arm[3] = msg.error
-        self.motor_temp[3] = msg.temperature
+        self.motor_temp[3] = int(msg.motor_temps[0])
         
     def process_suspension(self, msg):
         self.angoli_sosp[0] = msg.sosp1
@@ -748,36 +752,33 @@ class SuspensionController:
         # nota convenzioni: self.status_asm.mot_pos_1 = self.pos_arm[0] + self.error_arm[0]
         
         if self.error_arm[0] > limit:
-            self.delta[0] += step
-        elif self.error_arm[0] < limit:
-            self.delta[0] -= step 
+            self.delta[0] = self.error_arm[0]
+        elif self.error_arm[0] < -limit:
+            self.delta[0] = self.error_arm[0]
         else:
             ok = True
             
         if self.error_arm[1] > limit:
-            self.delta[1] += step
-        elif self.error_arm[1] < limit:
-            self.delta[1] -= step 
+            self.delta[1] = self.error_arm[1]
+        elif self.error_arm[1] < -limit:
+            self.delta[1] = self.error_arm[1]
         else:
             ok = True
             
         if self.error_arm[2] > limit:
-            self.delta[2] += step
-        elif self.error_arm[2] < limit:
-            self.delta[2] -= step 
+            self.delta[2] = self.error_arm[2]
+        elif self.error_arm[2] < -limit:
+            self.delta[2] = self.error_arm[2]
         else:
             ok = True
             
         if self.error_arm[3] > limit:
-            self.delta[3] += step
-        elif self.error_arm[3] < limit:
-            self.delta[3] -= step 
+            self.delta[3] = self.error_arm[3]
+        elif self.error_arm[0] < -limit:
+            self.delta[3] = self.error_arm[3]
         else:
             ok = True
-        
-        
-        
-            
+
         rospy.loginfo("Delta follower: %f %f %f %f",self.delta[0],self.delta[1],self.delta[2],self.delta[3])
             
     
@@ -849,16 +850,19 @@ class SuspensionController:
                 if self.mode == 0: # solo simulazione
                     self.get_tf()
                     self.calculate_fi()
+                    self.delta = ([0.0]*4)
                     #print("coppia",self.torque)
                 elif self.mode == 1: # solo inseguitore
                     self.get_tf()
                     #if count%10 == 0:
                     self.follower()
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 2: # solo SIL
                     self.get_tf()
                     self.calculate_fi()
                     self.delta = ([0.0]*4)
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 3: # SIL + anti sollevamento
                     self.pull_down()
@@ -871,6 +875,7 @@ class SuspensionController:
                     self.follower()
                     #if count%40 == 0:
                     self.calculate_fi()
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 5: # SIL + inseguitore + anti soll
                     self.pull_down()
