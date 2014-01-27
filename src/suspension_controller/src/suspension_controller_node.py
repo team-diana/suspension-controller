@@ -856,11 +856,13 @@ class SuspensionController:
                     self.get_tf()
                     #if count%10 == 0:
                     self.follower()
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 2: # solo SIL
                     self.get_tf()
                     self.calculate_fi()
                     self.delta = ([0.0]*4)
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 3: # SIL + anti sollevamento
                     self.pull_down()
@@ -873,6 +875,7 @@ class SuspensionController:
                     self.follower()
                     if count%40 == 0:
                         self.calculate_fi()
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 5: # SIL + inseguitore + anti soll
                     self.pull_down()
