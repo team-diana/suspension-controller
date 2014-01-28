@@ -741,6 +741,8 @@ class SuspensionController:
                 else:
                     self.pull_down_sts[i] = False
             time.sleep(0.1)
+        else:  
+            self.pull_down_sts = ([False]*4)
 
     def follower(self):
         step = 0.0
