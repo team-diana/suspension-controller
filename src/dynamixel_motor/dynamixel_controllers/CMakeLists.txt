@@ -15,6 +15,7 @@ add_service_files(
   StopController.srv
   TorqueEnable.srv
   SetTorque.srv
+  SetThreshold.srv
 )
 
 catkin_python_setup()

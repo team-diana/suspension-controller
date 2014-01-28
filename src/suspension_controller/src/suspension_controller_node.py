@@ -98,6 +98,8 @@ class SuspensionController:
            self.torquef.append([0]*21)
         
         self.pos_arm = ([0.0]*4)
+        self.error_arm = ([0.0]*4)
+        self.motor_temp = ([0.0]*4)
         
         self.pull_down_sts = ([False]*4)
         self.out_of_range_sts = ([False]*4)
@@ -137,27 +139,27 @@ class SuspensionController:
             self.init_pos = 0
             self.initializa(0,self.init_pos) # 0 means all
         #elif self.angoli_sosp[0] > 0.9 && self.angoli_sosp[1] > 0.9 && self.angoli_sosp[2] > 0.9 && self.angoli_sosp[3] > 0.9:
-        #    rospy.loginfo("Start position: a terra")
-        #    self.init_pos = 1
-        #    self.initialize(0,self.init_pos)
+        # rospy.loginfo("Start position: a terra")
+        # self.init_pos = 1
+        # self.initialize(0,self.init_pos)
         #else:
-        #    rospy.logfatal("Init failed")
-        #    TODO STAMPARE ERRORE ed uscire
-        #    rospy.signal_shutdown("Init failed")
-        #    self.init_ok = True #just in case
+        # rospy.logfatal("Init failed")
+        # TODO STAMPARE ERRORE ed uscire
+        # rospy.signal_shutdown("Init failed")
+        # self.init_ok = True #just in case
         #
         #while !self.init_ok:
-        #    for i in range(0,4):
-        #       self.init_ok = True
-        #        if self.angoli_sosp[i] < 0.2 || self.angoli_sosp[i] > 0.9:
-        #           try:
-        #                rospy.logwarning("Avvio fallito su %i, retry",i)
-        #                stop = rospy.ServiceProxy('/motore_' + (i+1) + '_controller/set_torque', SetTorque)
-        #                resp = stop(False)
-        #               self.initialize(i+1,self.init_pos)
-        #            except rospy.ServiceException, e:
-        #                rospy.logerror("Stop service call failed: %s"%e)
-        #                self.init_ok = False
+        # for i in range(0,4):
+        # self.init_ok = True
+        # if self.angoli_sosp[i] < 0.2 || self.angoli_sosp[i] > 0.9:
+        # try:
+        # rospy.logwarning("Avvio fallito su %i, retry",i)
+        # stop = rospy.ServiceProxy('/motore_' + (i+1) + '_controller/set_torque', SetTorque)
+        # resp = stop(False)
+        # self.initialize(i+1,self.init_pos)
+        # except rospy.ServiceException, e:
+        # rospy.logerror("Stop service call failed: %s"%e)
+        # self.init_ok = False
         
         #self.diagnostics_pub = rospy.Publisher('/diagnostics', DiagnosticArray)
         #if self.diagnostics_rate > 0: Thread(target=self.diagnostics_processor).start()
@@ -171,10 +173,10 @@ class SuspensionController:
     
     def start(self):
         self.running = True
-#        for i in range(1,5):
-#             self.joint_state_sub = rospy.Subscriber('/motore_'+ str(i) +'_controller/state', JointState, self.process_command,i)
-#             self.arm_state_sub = rospy.Subscriber('/motore_'+ str(i) +'_controller/arm/state', JointState, self.process_arm_command,i)
-#             self.motor_states_sub = rospy.Subscriber('/motor_states/suspension_port', MotorStateList, self.process_motor_states,i)
+# for i in range(1,5):
+# self.joint_state_sub = rospy.Subscriber('/motore_'+ str(i) +'_controller/state', JointState, self.process_command,i)
+# self.arm_state_sub = rospy.Subscriber('/motore_'+ str(i) +'_controller/arm/state', JointState, self.process_arm_command,i)
+# self.motor_states_sub = rospy.Subscriber('/motor_states/suspension_port', MotorStateList, self.process_motor_states,i)
              #self.command_pub = rospy.Pubblisher(self.controller_namespace + '/command', Float64)
         self.command_1_pub = rospy.Publisher('/motore_1_controller/command', Float64)
         self.command_arm1_pub = rospy.Publisher('/motore_1_controller/arm/command', Float64)
@@ -193,9 +195,9 @@ class SuspensionController:
         self.status_asm_pub = rospy.Publisher('/status_asm', STATUS_ASM)
         
         self.arm_status_1_sub = rospy.Subscriber('/motore_1_controller/arm/state', JointState, self.process_arm_1)
-        self.arm_status_2_sub = rospy.Subscriber('/motore_2_controller/arm/state', JointState, self.process_arm_2) 
-        self.arm_status_3_sub = rospy.Subscriber('/motore_3_controller/arm/state', JointState, self.process_arm_3) 
-        self.arm_status_4_sub = rospy.Subscriber('/motore_4_controller/arm/state', JointState, self.process_arm_4) 
+        self.arm_status_2_sub = rospy.Subscriber('/motore_2_controller/arm/state', JointState, self.process_arm_2)
+        self.arm_status_3_sub = rospy.Subscriber('/motore_3_controller/arm/state', JointState, self.process_arm_3)
+        self.arm_status_4_sub = rospy.Subscriber('/motore_4_controller/arm/state', JointState, self.process_arm_4)
         
         self.range_front_sub = rospy.Subscriber('/ADC/range_front_down', Range, self.process_range_front)
         self.range_post_sub = rospy.Subscriber('/ADC/range_post_down', Range, self.process_range_post)
@@ -213,8 +215,8 @@ class SuspensionController:
     def stop(self):
         self.running = False
         #self.joint_state_sub.unregister()
-#        self.arm_state_sub.unregister()
-#        self.motor_states_sub.unregister()
+# self.arm_state_sub.unregister()
+# self.motor_states_sub.unregister()
         self.command_arm1_pub.unregister()
         self.command_tor1_pub.unregister()
         self.command_arm2_pub.unregister()
@@ -247,17 +249,23 @@ class SuspensionController:
         self.mode = req.mode
         response = []
         if req.mode == 0:
+            self.delta = ([0.0]*4)
             response = "Simulazione"
         elif req.mode == 1:
+            self.pull_down_sts = ([False]*4)
             response = "Inseguitore"
         elif req.mode == 2:
+            self.delta = ([0.0]*4)
+            self.pull_down_sts = ([False]*4)
             response = "Osservatore"
         elif req.mode == 3:
+            self.delta = ([0.0]*4)
             response = "Osservatore + antisollevamento"
         elif req.mode == 4:
+            self.pull_down_sts = ([False]*4)
             response = "Osservatore + inseguitore"
         elif req.mode == 5:
-            response = "Osservatore + inseguitore  + antisollevamento"
+            response = "Osservatore + inseguitore + antisollevamento"
         else:
             response = "Not supported"
             self.mode = 0
@@ -288,6 +296,8 @@ class SuspensionController:
             self.calculate_fi()
             self.delta = ([0.0]*4)
             self.output_fi()
+            while min(self.torque) < 0.1 :
+                self.pull_down()
         return [self.freeze]
 
     def initializa(self,id,init_pos):
@@ -303,18 +313,18 @@ class SuspensionController:
             return[]
             
         if id == 0 or id == 1:
-            self.command_1_pub.publish(ang_p)  #1 positiva
+            self.command_1_pub.publish(ang_p) #1 positiva
         if id == 0 or id == 2:
-            self.command_2_pub.publish(ang_n)  #2 negativa
+            self.command_2_pub.publish(ang_n) #2 negativa
         if id == 0 or id == 3:
-            self.command_3_pub.publish(ang_n)  #3 negativa
+            self.command_3_pub.publish(ang_n) #3 negativa
         if id == 0 or id == 4:
-            self.command_4_pub.publish(ang_p)  #4 positiva
+            self.command_4_pub.publish(ang_p) #4 positiva
         rospy.loginfo("Movimento")
         time.sleep(5.0);
         
         if init_pos == 0:
-            ang_p = 0.5         #è una velocità!
+            ang_p = 0.5 #una velocita'!
             ang_n = -0.5
         else:
             ang_p = -0.5
@@ -352,37 +362,37 @@ class SuspensionController:
         
 
     def diagnostics_processor(self):
-#        diag_msg = DiagnosticArray()
-#        
-#        rate = rospy.Rate(self.diagnostics_rate)
-#        while not rospy.is_shutdown():
-#            diag_msg.status = []
-#            diag_msg.header.stamp = rospy.Time.now()
-#            
-#            for controller in self.controllers.values():
-#                try:
-#                    joint_state = controller.joint_state
-#                    temps = joint_state.motor_temps
-#                    max_temp = max(temps)
-#                    
-#                    status = DiagnosticStatus()
-#                    status.name = 'Joint Controller (%s)' % controller.joint_name
-#                    status.hardware_id = 'Robotis Dynamixel %s on port %s' % (str(joint_state.motor_ids), controller.port_namespace)
-#                    status.values.append(KeyValue('Goal', str(joint_state.goal_pos)))
-#                    status.values.append(KeyValue('Position', str(joint_state.current_pos)))
-#                    status.values.append(KeyValue('Error', str(joint_state.error)))
-#                    status.values.append(KeyValue('Velocity', str(joint_state.velocity)))
-#                    status.values.append(KeyValue('Load', str(joint_state.load)))
-#                    status.values.append(KeyValue('Moving', str(joint_state.is_moving)))
-#                    status.values.append(KeyValue('Temperature', str(max_temp)))
-#                    status.level = DiagnosticStatus.OK
-#                    status.message = 'OK'
-#                        
-#                    diag_msg.status.append(status)
-#                except:
-#                    pass
-#                    
-#            self.diagnostics_pub.publish(diag_msg)
+# diag_msg = DiagnosticArray()
+#
+# rate = rospy.Rate(self.diagnostics_rate)
+# while not rospy.is_shutdown():
+# diag_msg.status = []
+# diag_msg.header.stamp = rospy.Time.now()
+#
+# for controller in self.controllers.values():
+# try:
+# joint_state = controller.joint_state
+# temps = joint_state.motor_temps
+# max_temp = max(temps)
+#
+# status = DiagnosticStatus()
+# status.name = 'Joint Controller (%s)' % controller.joint_name
+# status.hardware_id = 'Robotis Dynamixel %s on port %s' % (str(joint_state.motor_ids), controller.port_namespace)
+# status.values.append(KeyValue('Goal', str(joint_state.goal_pos)))
+# status.values.append(KeyValue('Position', str(joint_state.current_pos)))
+# status.values.append(KeyValue('Error', str(joint_state.error)))
+# status.values.append(KeyValue('Velocity', str(joint_state.velocity)))
+# status.values.append(KeyValue('Load', str(joint_state.load)))
+# status.values.append(KeyValue('Moving', str(joint_state.is_moving)))
+# status.values.append(KeyValue('Temperature', str(max_temp)))
+# status.level = DiagnosticStatus.OK
+# status.message = 'OK'
+#
+# diag_msg.status.append(status)
+# except:
+# pass
+#
+# self.diagnostics_pub.publish(diag_msg)
             self.rate.sleep()
 
 
@@ -403,6 +413,8 @@ class SuspensionController:
         
         self.torque[0] = self.torquef[0][20]
         self.pos_arm[0] = msg.current_pos
+        self.error_arm[0] = msg.error
+        self.motor_temp[0] = int(msg.motor_temps[0])
         
     def process_arm_2(self, msg):
         self.torquef[1][self.pointer[1]] = msg.load
@@ -415,6 +427,8 @@ class SuspensionController:
         
         self.torque[1] = self.torquef[1][20]
         self.pos_arm[1] = msg.current_pos
+        self.error_arm[1] = msg.error
+        self.motor_temp[1] = int(msg.motor_temps[0])
         
     def process_arm_3(self, msg):
         self.torquef[2][self.pointer[2]] = msg.load
@@ -427,6 +441,8 @@ class SuspensionController:
         
         self.torque[2] = self.torquef[2][20]
         self.pos_arm[2] = msg.current_pos
+        self.error_arm[2] = msg.error
+        self.motor_temp[2] = int(msg.motor_temps[0])
         
     def process_arm_4(self, msg):
         self.torquef[3][self.pointer[3]] = msg.load
@@ -439,6 +455,8 @@ class SuspensionController:
         
         self.torque[3] = self.torquef[3][20]
         self.pos_arm[3] = msg.current_pos
+        self.error_arm[3] = msg.error
+        self.motor_temp[3] = int(msg.motor_temps[0])
         
     def process_suspension(self, msg):
         self.angoli_sosp[0] = msg.sosp1
@@ -448,7 +466,7 @@ class SuspensionController:
 
 
 
-    def get_tf(self): 
+    def get_tf(self):
         rospy.loginfo("get TF")
         for i in range(0,4):
            try:
@@ -468,7 +486,7 @@ class SuspensionController:
            #rospy.logdebug('translation: ',trans)
            #angles = euler_from_quaternion(rot)
            #rospy.logdebug('rotation: ',[(180.0/math.pi)*i for i in angles])
-        rospy.logdebug("distanza ruote da chassis: %f %f %f %f",self.deltaH_chassis[0],self.deltaH_chassis[1],self.deltaH_chassis[2],self.deltaH_chassis[3])        
+        rospy.logdebug("distanza ruote da chassis: %f %f %f %f",self.deltaH_chassis[0],self.deltaH_chassis[1],self.deltaH_chassis[2],self.deltaH_chassis[3])
         
         
         for i in range(0,4):
@@ -532,7 +550,7 @@ class SuspensionController:
         rospy.logdebug("distanza ruote da base_link: %f %f %f %f",self.Z_ruote[0],self.Z_ruote[1],self.Z_ruote[2],self.Z_ruote[3])
         
         
-        self.deltaH_chassis_virtuale = self.req_height -  self.altezza
+        self.deltaH_chassis_virtuale = self.req_height - self.altezza
         rospy.logdebug("distanza da inertial a chassis virtuale: %f",self.deltaH_chassis_virtuale)
         self.joint_state_out.name = []
         self.joint_state_out.position = []
@@ -540,7 +558,7 @@ class SuspensionController:
         self.joint_state_out.effort = []
         self.joint_state_out.name.append("delta_h")
         self.joint_state_out.position.append(self.deltaH_chassis_virtuale)
-        self.joint_state_out.header.stamp = rospy.Time.now()  
+        self.joint_state_out.header.stamp = rospy.Time.now()
         self.joint_state_out_pub.publish(self.joint_state_out)
         self.joint_state_out.name = []
         self.joint_state_out.position = []
@@ -548,7 +566,7 @@ class SuspensionController:
         self.joint_state_out.effort = []
         self.joint_state_out.name.append("rpy_r")
         self.joint_state_out.position.append(-self.angoli_chassis[0])
-        self.joint_state_out.header.stamp = rospy.Time.now()  
+        self.joint_state_out.header.stamp = rospy.Time.now()
         self.joint_state_out_pub.publish(self.joint_state_out)
         self.joint_state_out.name = []
         self.joint_state_out.position = []
@@ -556,7 +574,7 @@ class SuspensionController:
         self.joint_state_out.effort = []
         self.joint_state_out.name.append("rpy_y")
         self.joint_state_out.position.append(-self.angoli_chassis[1])
-        self.joint_state_out.header.stamp = rospy.Time.now()  
+        self.joint_state_out.header.stamp = rospy.Time.now()
         self.joint_state_out_pub.publish(self.joint_state_out)
         
         
@@ -574,22 +592,22 @@ class SuspensionController:
         self.posa_chassis_virtuale = trans
         
         
-#        for i in range(0,4):
-#           try:
-#               if i == 0:
-#                   (trans,rot) = self.listener.lookupTransform('inertial', 'leg_f_l', rospy.Time(0))
-#               elif i == 1:
-#                   (trans,rot) = self.listener.lookupTransform('inertial', 'leg_p_l', rospy.Time(0))
-#               elif i == 2:
-#                   (trans,rot) = self.listener.lookupTransform('inertial', 'leg_f_r', rospy.Time(0))
-#               elif i == 3:
-#                   (trans,rot) = self.listener.lookupTransform('inertial', 'leg_p_r', rospy.Time(0))
-#               self.deltaH_hub[i]= -trans[2]
-#               rospy.logdebug('distanza hub da inertial: ',self.deltaH_hub)
-#           except (tf.LookupException, tf.ConnectivityException):
-#               rospy.logwarn('no_info')
-#               self.deltaH_hub[i]= 0.0
-#               continue
+# for i in range(0,4):
+# try:
+# if i == 0:
+# (trans,rot) = self.listener.lookupTransform('inertial', 'leg_f_l', rospy.Time(0))
+# elif i == 1:
+# (trans,rot) = self.listener.lookupTransform('inertial', 'leg_p_l', rospy.Time(0))
+# elif i == 2:
+# (trans,rot) = self.listener.lookupTransform('inertial', 'leg_f_r', rospy.Time(0))
+# elif i == 3:
+# (trans,rot) = self.listener.lookupTransform('inertial', 'leg_p_r', rospy.Time(0))
+# self.deltaH_hub[i]= -trans[2]
+# rospy.logdebug('distanza hub da inertial: ',self.deltaH_hub)
+# except (tf.LookupException, tf.ConnectivityException):
+# rospy.logwarn('no_info')
+# self.deltaH_hub[i]= 0.0
+# continue
 
 
     def calculate_fi(self):
@@ -606,11 +624,11 @@ class SuspensionController:
                 try:
                    self.fi[i]=math.acos(( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20)
                 except (ValueError):
-                   rospy.logwarn("out_of_range on wheel %i",i)
+                   rospy.logwarn("out_of_range on wheel %i",i+1)
                    if (( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20) > 1:
-                      self.fi[i]=0.09
+                      self.fi[i]=0.39
                    elif (( self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i])/0.20) < 0:
-                      self.fi[i]=1.07
+                      self.fi[i]=1.22
                    continue
                 self.joint_state_out.name = []
                 self.joint_state_out.position = []
@@ -625,7 +643,7 @@ class SuspensionController:
                 elif i == 3:
                     self.joint_state_out.name.append("hub_p_r_virtuale")
                 self.joint_state_out.position.append(self.fi[i] + self.delta[i])
-                self.joint_state_out.header.stamp = rospy.Time.now()  
+                self.joint_state_out.header.stamp = rospy.Time.now()
                 self.joint_state_out_pub.publish(self.joint_state_out)
                 
         rospy.loginfo("angolo virtuale: %f %f %f %f",self.fi[0],self.fi[1],self.fi[2],self.fi[3])
@@ -633,62 +651,69 @@ class SuspensionController:
         
     def output_fi(self):
         #self.recovery = 0
-        for i in range(0,4): 
-            phi = self.fi[i] + self.delta[i]
-            if phi < 0.10: 
-                 phi = 0.10
-                 self.out_of_range_sts[i] = True
-                 #self.recovery += 1
-            elif phi > 1.06: 
-                 phi = 1.06
-                 self.out_of_range_sts[i] = True
-                 #self.recovery += 1
-            else:
-                self.out_of_range_sts[i] = False
-                  
-            if i == 0:
-                self.command_arm1_pub.publish(phi)
-            elif i == 1:
-                self.command_arm2_pub.publish(phi)
-            elif i == 2:
-                self.command_arm3_pub.publish(phi)
-            elif i == 3:
-                self.command_arm4_pub.publish(phi)
+        for i in range(0,4):
+            if (self.pull_down_sts[i] == False):
+                phi = self.fi[i] + self.delta[i]
+                if phi < 0.40:
+                     phi = 0.40
+                     self.out_of_range_sts[i] = True
+                     #self.recovery += 1
+                elif phi > 1.21:
+                     phi = 1.21
+                     self.out_of_range_sts[i] = True
+                     #self.recovery += 1
+                else:
+                    self.out_of_range_sts[i] = False
+                
+                if self.torque[i] > 3.9:
+                    rospy.logwarn("Limite coppia su %i!", i+1)
+                    phi = phi + 0.1
+                
+                if i == 0:
+                    self.command_arm1_pub.publish(phi)
+                elif i == 1:
+                    self.command_arm2_pub.publish(phi)
+                elif i == 2:
+                    self.command_arm3_pub.publish(phi)
+                elif i == 3:
+                    self.command_arm4_pub.publish(phi)
+                    
+                if self.torque[i] > 3.9:
+                    time.sleep(0.5)
+
+# if self.recovery == 3:
+# print('attivata recovery altezza')
+# print('---------------')
+ # if not self.recovery_height: #prima attivazione
+# self.recovery_height = True
+# self.req_height_temp = self.req_height
+# if self.req_height >= 0.061:
+# self.req_height = self.req_height - 0.001
+# else: #successive
+# if self.req_height >= 0.061:
+# self.req_height = self.req_height - 0.001
             
-#        if self.recovery == 3:        
-#                 print('attivata recovery altezza')
-#                 print('---------------')
- #                if not self.recovery_height: #prima attivazione
-#                    self.recovery_height = True
-#                    self.req_height_temp = self.req_height
-#                 if self.req_height >= 0.061:
-#                    self.req_height = self.req_height - 0.001
-#                 else: #successive
-#                    if self.req_height >= 0.061:
-#                        self.req_height = self.req_height - 0.001
-            
-#        elif self.req_height <= self.req_height_temp and self.recovery_height: #non sono pi\F9 in recovery e devo correggere altezza
-#                self.req_height = self.req_height + 0.001
-#                if self.req_height_temp == self.req_height:
-#                   self.recovery_height = False
-#                   print('rientro recovery altezza')
-#                   print('---------------')
+# elif self.req_height <= self.req_height_temp and self.recovery_height: #non sono pi\F9 in recovery e devo correggere altezza
+# self.req_height = self.req_height + 0.001
+# if self.req_height_temp == self.req_height:
+# self.recovery_height = False
+# print('rientro recovery altezza')
+# print('---------------')
 
     def pull_down(self):
         rospy.logdebug("Coppie: %f %f %f %f",self.torque[0],self.torque[1],self.torque[2],self.torque[3])
         if min(self.torque) < 0.1:
+            rospy.loginfo('Recovery ruota sollevata')
             for i in range(0,4):
                 if self.torque[i] < 0.1:
                     self.pull_down_sts[i] = True
-                    rospy.logdebug("Coppia motore %i %f -> comando posizione %f",i+1,self.torque[i],self.pos_arm[i]-0.1)
-                    phi = self.pos_arm[i] - 0.1
-                    if phi < 0.10: 
-                        phi = 0.10
-                        break
-                    elif phi > 1.06: 
-                        phi = 1.06
-                        break
-                          
+                    phi = self.pos_arm[i] - 0.5
+                    if phi < 0.40:
+                        phi = 0.40
+                    elif phi > 1.21:
+                        phi = 1.00
+                    
+                    rospy.logdebug("Coppia motore %i %f -> comando posizione %f",i+1,self.torque[i],phi)
                     if i == 0:
                         self.command_arm1_pub.publish(phi)
                     elif i == 1:
@@ -697,7 +722,7 @@ class SuspensionController:
                         self.command_arm3_pub.publish(phi)
                     elif i == 3:
                         self.command_arm4_pub.publish(phi)
-                
+                    
                     self.joint_state_out.name = []
                     self.joint_state_out.position = []
                     self.joint_state_out.velocity = []
@@ -711,64 +736,63 @@ class SuspensionController:
                     elif i == 3:
                         self.joint_state_out.name.append("hub_p_r_virtuale")
                     self.joint_state_out.position.append(phi)
-                    self.joint_state_out.header.stamp = rospy.Time.now()  
+                    self.joint_state_out.header.stamp = rospy.Time.now()
                     self.joint_state_out_pub.publish(self.joint_state_out)
-                    
-                    time.sleep(0.1)
                 else:
                     self.pull_down_sts[i] = False
-                
-            rospy.loginfo('Recovery ruota sollevata')
+            time.sleep(0.1)
+        else:  
+            self.pull_down_sts = ([False]*4)
 
     def follower(self):
         step = 0.0
-        roll = 0.0
-        pitch = 0.0
         step = self.speed/float(self.hz)
-        roll = self.angoli_chassis[0]
-        pitch = self.angoli_chassis[1]
         
-        limit = 0.05
+        limit = 0.03
         ok = False
         
-        if pitch > limit: #pende in avanti
-            self.delta[0] -= step/10 * math.fabs(pitch-limit)/limit
-            self.delta[2] -= step/10 * math.fabs(pitch-limit)/limit
-            self.delta[1] += step/10 * math.fabs(pitch-limit)/limit
-            self.delta[3] += step/10 * math.fabs(pitch-limit)/limit
-        elif pitch < limit: #pende indietro
-            self.delta[0] += step/10 * math.fabs(pitch-limit)/limit
-            self.delta[2] += step/10 * math.fabs(pitch-limit)/limit
-            self.delta[1] -= step/10 * math.fabs(pitch-limit)/limit
-            self.delta[3] -= step/10 * math.fabs(pitch-limit)/limit
-        else:
-            ok = True
-            
-        if roll > limit: #pende a destra
-            self.delta[2] -= step/10 * math.fabs(roll-limit)/limit
-            self.delta[3] -= step/10 * math.fabs(roll-limit)/limit
-            self.delta[0] += step/10 * math.fabs(roll-limit)/limit
-            self.delta[1] += step/10 * math.fabs(roll-limit)/limit
-        elif roll < limit: #pende a sinistra
-            self.delta[2] += step/10 * math.fabs(roll-limit)/limit
-            self.delta[3] += step/10 * math.fabs(roll-limit)/limit
-            self.delta[0] -= step/10 * math.fabs(roll-limit)/limit
-            self.delta[1] -= step/10 * math.fabs(roll-limit)/limit
-        else:
-            ok = True
+        # nota convenzioni: self.status_asm.mot_pos_1 = self.pos_arm[0] + self.error_arm[0]
         
-        if ok == True:
-            self.delta = ([0.0]*4)
+        if self.error_arm[0] > limit:
+            self.delta[0] = self.error_arm[0]
+        elif self.error_arm[0] < -limit:
+            self.delta[0] = self.error_arm[0]
+        else:
+            ok = True
             
+        if self.error_arm[1] > limit:
+            self.delta[1] = self.error_arm[1]
+        elif self.error_arm[1] < -limit:
+            self.delta[1] = self.error_arm[1]
+        else:
+            ok = True
+            
+        if self.error_arm[2] > limit:
+            self.delta[2] = self.error_arm[2]
+        elif self.error_arm[2] < -limit:
+            self.delta[2] = self.error_arm[2]
+        else:
+            ok = True
+            
+        if self.error_arm[3] > limit:
+            self.delta[3] = self.error_arm[3]
+        elif self.error_arm[0] < -limit:
+            self.delta[3] = self.error_arm[3]
+        else:
+            ok = True
+
         rospy.loginfo("Delta follower: %f %f %f %f",self.delta[0],self.delta[1],self.delta[2],self.delta[3])
             
     
     def set_status(self):
-        #TODO aggiungere posizione da imu sospensioni
-        self.status_asm.mot_pos_1 = self.pos_arm[0]
-        self.status_asm.mot_pos_2 = self.pos_arm[1]
-        self.status_asm.mot_pos_3 = self.pos_arm[2]
-        self.status_asm.mot_pos_4 = self.pos_arm[3]
+        self.status_asm.pos_1 = self.pos_arm[0]
+        self.status_asm.pos_2 = self.pos_arm[1]
+        self.status_asm.pos_3 = self.pos_arm[2]
+        self.status_asm.pos_4 = self.pos_arm[3]
+        self.status_asm.mot_pos_1 = self.pos_arm[0] + self.error_arm[0]
+        self.status_asm.mot_pos_2 = self.pos_arm[1] + self.error_arm[1]
+        self.status_asm.mot_pos_3 = self.pos_arm[2] + self.error_arm[2]
+        self.status_asm.mot_pos_4 = self.pos_arm[3] + self.error_arm[3]
         self.status_asm.command_1 = self.fi[0]
         self.status_asm.command_2 = self.fi[1]
         self.status_asm.command_3 = self.fi[2]
@@ -792,6 +816,11 @@ class SuspensionController:
         
         #TODO inserire temperature e lettura delle stesse
         
+        self.status_asm.motor_1_temp = self.motor_temp[0]
+        self.status_asm.motor_2_temp = self.motor_temp[1]
+        self.status_asm.motor_3_temp = self.motor_temp[2]
+        self.status_asm.motor_4_temp = self.motor_temp[3]
+        
         self.status_asm.load_1 = self.torque[0]
         self.status_asm.load_2 = self.torque[1]
         self.status_asm.load_3 = self.torque[2]
@@ -807,7 +836,7 @@ class SuspensionController:
         self.status_asm.out_of_range_3 = self.out_of_range_sts[2]
         self.status_asm.out_of_range_4 = self.out_of_range_sts[3]
         
-        self.status_asm.header.stamp = rospy.Time.now()  
+        self.status_asm.header.stamp = rospy.Time.now()
         self.status_asm_pub.publish(self.status_asm)
 
 
@@ -823,16 +852,19 @@ class SuspensionController:
                 if self.mode == 0: # solo simulazione
                     self.get_tf()
                     self.calculate_fi()
+                    self.delta = ([0.0]*4)
                     #print("coppia",self.torque)
                 elif self.mode == 1: # solo inseguitore
                     self.get_tf()
                     #if count%10 == 0:
                     self.follower()
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 2: # solo SIL
                     self.get_tf()
                     self.calculate_fi()
                     self.delta = ([0.0]*4)
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 3: # SIL + anti sollevamento
                     self.pull_down()
@@ -843,15 +875,16 @@ class SuspensionController:
                 elif self.mode == 4: # SIL + inseguitore
                     self.get_tf()
                     self.follower()
-                    if count%40 == 0:
-                        self.calculate_fi()
+                    #if count%40 == 0:
+                    self.calculate_fi()
+                    self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 5: # SIL + inseguitore + anti soll
                     self.pull_down()
                     self.get_tf()
                     self.follower()
-                    if count%40 == 0:
-                        self.calculate_fi()
+                    #if count%40 == 0:
+                    self.calculate_fi()
                     self.output_fi()
                 
             #TODO algoritmo suddivisione carico
@@ -876,7 +909,7 @@ class SuspensionController:
                 # except rospy.ServiceException, e:
                     # print "Service call failed: %s"%e
             
-            self.set_status()            
+            self.set_status()
                 
             count += 1
             self.rate.sleep()
