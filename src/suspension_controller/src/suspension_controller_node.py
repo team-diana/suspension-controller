@@ -756,28 +756,28 @@ class SuspensionController:
         if self.error_arm[0] > limit:
             self.delta[0] = self.error_arm[0]
         elif self.error_arm[0] < -limit:
-            self.delta[0] = self.error_arm[0]
+            self.delta[0] = -self.error_arm[0]
         else:
             ok = True
             
         if self.error_arm[1] > limit:
             self.delta[1] = self.error_arm[1]
         elif self.error_arm[1] < -limit:
-            self.delta[1] = self.error_arm[1]
+            self.delta[1] = -self.error_arm[1]
         else:
             ok = True
             
         if self.error_arm[2] > limit:
             self.delta[2] = self.error_arm[2]
         elif self.error_arm[2] < -limit:
-            self.delta[2] = self.error_arm[2]
+            self.delta[2] = -self.error_arm[2]
         else:
             ok = True
             
         if self.error_arm[3] > limit:
             self.delta[3] = self.error_arm[3]
         elif self.error_arm[0] < -limit:
-            self.delta[3] = self.error_arm[3]
+            self.delta[3] = -self.error_arm[3]
         else:
             ok = True
 
