@@ -125,6 +125,8 @@ class JointPositionController(JointController):
         if self.compliance_punch is not None: self.set_compliance_punch(self.compliance_punch)
         if self.torque_limit is not None: self.set_torque_limit(self.torque_limit)
         
+        self.threshold_degree = 20 #start value soglia = 20°
+        
         self.dxl_io.set_d_gain(self.motor_id, 0)  #40
         self.dxl_io.set_i_gain(self.motor_id, 2)  #20
         self.dxl_io.set_p_gain(self.motor_id, 5) #100
@@ -200,6 +202,9 @@ class JointPositionController(JointController):
         
     def set_torque(self, torque):
         self.dxl_io.set_torque_enabled(self.motor_id, torque)
+        
+    def set_threshold(self, threshold):
+        self.threshold_degree = threshold
 
     def process_motor_states(self, state_list):
         self.state_list = state_list;
@@ -318,7 +323,7 @@ class JointPositionController(JointController):
              angle = (msg.data - zero) * 6.3    
         
         current_pos = self.joint_state.current_pos #self.raw_to_rad(state.position, self.initial_position_raw, self.flipped, self.RADIANS_PER_ENCODER_TICK)
-        threshold = 20*(2*math.pi)/360  #conversione da gradi a radianti della soglia
+        threshold = self.threshold_degree*(2*math.pi)/360  #conversione da gradi a radianti della soglia
         modulated_speed = self.old_speed*(math.fabs(angle-current_pos)*threshold)   #modula da 0 a soglia e poi satura
         if modulated_speed < self.MIN_VELOCITY: modulated_speed = self.MIN_VELOCITY
         elif modulated_speed > self.old_speed: modulated_speed = self.old_speed

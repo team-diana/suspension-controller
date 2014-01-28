@@ -54,6 +54,7 @@ from dynamixel_controllers.srv import SetComplianceMargin
 from dynamixel_controllers.srv import SetCompliancePunch
 from dynamixel_controllers.srv import SetTorqueLimit
 from dynamixel_controllers.srv import SetTorque
+from dynamixel_controllers.srv import SetThreshold
 
 from std_msgs.msg import Float64
 from dynamixel_msgs.msg import MotorStateList
@@ -88,6 +89,7 @@ class JointController:
         self.compliance_punch_service = rospy.Service(self.controller_namespace + '/set_compliance_punch', SetCompliancePunch, self.process_set_compliance_punch)
         self.torque_limit_service = rospy.Service(self.controller_namespace + '/set_torque_limit', SetTorqueLimit, self.process_set_torque_limit)
         self.torque_service = rospy.Service(self.controller_namespace + '/set_torque', SetTorque, self.process_set_torque)
+        self.torque_service = rospy.Service(self.controller_namespace + '/set_threshold', SetThreshold, self.process_set_threshold)
 
     def __ensure_limits(self):
         if self.compliance_slope is not None:
@@ -189,6 +191,10 @@ class JointController:
         
     def process_set_torque(self, req):
         self.set_torque(req.torque)
+        return []
+        
+    def process_set_threshold(self, req):
+        self.set_threshold(req.threshold)
         return []
 
     def process_motor_states(self, state_list):

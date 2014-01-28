@@ -741,44 +741,46 @@ class SuspensionController:
                 else:
                     self.pull_down_sts[i] = False
             time.sleep(0.1)
+        else:  
+            self.pull_down_sts = ([False]*4)
 
     def follower(self):
         step = 0.0
-        roll = 0.0
-        pitch = 0.0
         step = self.speed/float(self.hz)
-        roll = self.angoli_chassis[0]
-        pitch = self.angoli_chassis[1]
         
-        limit = 0.05
+        limit = 0.03
         ok = False
         
-        if pitch > limit: #pende in avanti
-            self.delta[0] -= step/10 * math.fabs(pitch-limit)/limit
-            self.delta[2] -= step/10 * math.fabs(pitch-limit)/limit
-            self.delta[1] += step/10 * math.fabs(pitch-limit)/limit
-            self.delta[3] += step/10 * math.fabs(pitch-limit)/limit
-        elif pitch < limit: #pende indietro
-            self.delta[0] += step/10 * math.fabs(pitch-limit)/limit
-            self.delta[2] += step/10 * math.fabs(pitch-limit)/limit
-            self.delta[1] -= step/10 * math.fabs(pitch-limit)/limit
-            self.delta[3] -= step/10 * math.fabs(pitch-limit)/limit
+        # nota convenzioni: self.status_asm.mot_pos_1 = self.pos_arm[0] + self.error_arm[0]
+        
+        if self.error_arm[0] > limit:
+            self.delta[0] = self.error_arm[0]
+        elif self.error_arm[0] < -limit:
+            self.delta[0] = self.error_arm[0]
         else:
             ok = True
             
-        if roll > limit: #pende a destra
-            self.delta[2] -= step/10 * math.fabs(roll-limit)/limit
-            self.delta[3] -= step/10 * math.fabs(roll-limit)/limit
-            self.delta[0] += step/10 * math.fabs(roll-limit)/limit
-            self.delta[1] += step/10 * math.fabs(roll-limit)/limit
-        elif roll < limit: #pende a sinistra
-            self.delta[2] += step/10 * math.fabs(roll-limit)/limit
-            self.delta[3] += step/10 * math.fabs(roll-limit)/limit
-            self.delta[0] -= step/10 * math.fabs(roll-limit)/limit
-            self.delta[1] -= step/10 * math.fabs(roll-limit)/limit
+        if self.error_arm[1] > limit:
+            self.delta[1] = self.error_arm[1]
+        elif self.error_arm[1] < -limit:
+            self.delta[1] = self.error_arm[1]
         else:
             ok = True
             
+        if self.error_arm[2] > limit:
+            self.delta[2] = self.error_arm[2]
+        elif self.error_arm[2] < -limit:
+            self.delta[2] = self.error_arm[2]
+        else:
+            ok = True
+            
+        if self.error_arm[3] > limit:
+            self.delta[3] = self.error_arm[3]
+        elif self.error_arm[0] < -limit:
+            self.delta[3] = self.error_arm[3]
+        else:
+            ok = True
+
         rospy.loginfo("Delta follower: %f %f %f %f",self.delta[0],self.delta[1],self.delta[2],self.delta[3])
             
     
@@ -873,16 +875,16 @@ class SuspensionController:
                 elif self.mode == 4: # SIL + inseguitore
                     self.get_tf()
                     self.follower()
-                    if count%40 == 0:
-                        self.calculate_fi()
+                    #if count%40 == 0:
+                    self.calculate_fi()
                     self.pull_down_sts = ([False]*4)
                     self.output_fi()
                 elif self.mode == 5: # SIL + inseguitore + anti soll
                     self.pull_down()
                     self.get_tf()
                     self.follower()
-                    if count%40 == 0:
-                        self.calculate_fi()
+                    #if count%40 == 0:
+                    self.calculate_fi()
                     self.output_fi()
                 
             #TODO algoritmo suddivisione carico
