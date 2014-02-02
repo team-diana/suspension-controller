@@ -24,6 +24,7 @@ float64 height_4
 
 float64 current_height
 float64 command_height
+float64 inertial_height
 
 float64 roll
 float64 pitch
