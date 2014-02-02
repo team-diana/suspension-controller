@@ -809,6 +809,7 @@ class SuspensionController:
         
         self.status_asm.current_height = self.altezza - 0.05
         self.status_asm.command_height = self.req_height - 0.05
+        self.status_asm.inertial_height = max(self.deltaH_inertial)
         
         self.status_asm.roll = self.angoli_chassis[0]
         self.status_asm.pitch = self.angoli_chassis[1]
