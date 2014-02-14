@@ -617,7 +617,7 @@ class SuspensionController:
         roll = self.angoli_chassis[0]
         pitch = self.angoli_chassis[1]
         
-        limit = 0.1
+        limit = 0.05
         
         if math.fabs(pitch) > limit or math.fabs(roll) or math.fabs(self.deltaH_chassis_virtuale)> limit:
             for i in range(0,4):
@@ -665,7 +665,7 @@ class SuspensionController:
                 else:
                     self.out_of_range_sts[i] = False
                 
-                if self.torque[i] > 3.9:
+                if self.torque[i] > 3.0:
                     rospy.logwarn("Limite coppia su %i!", i+1)
                     phi = phi + 0.1
                 
@@ -678,7 +678,7 @@ class SuspensionController:
                 elif i == 3:
                     self.command_arm4_pub.publish(phi)
                     
-                if self.torque[i] > 3.9:
+                if self.torque[i] > 3.0:
                     time.sleep(0.5)
 
 # if self.recovery == 3:
@@ -756,28 +756,28 @@ class SuspensionController:
         if self.error_arm[0] > limit:
             self.delta[0] = self.error_arm[0]
         elif self.error_arm[0] < -limit:
-            self.delta[0] = -self.error_arm[0]
+            self.delta[0] = self.error_arm[0]
         else:
             ok = True
             
         if self.error_arm[1] > limit:
             self.delta[1] = self.error_arm[1]
         elif self.error_arm[1] < -limit:
-            self.delta[1] = -self.error_arm[1]
+            self.delta[1] = self.error_arm[1]
         else:
             ok = True
             
         if self.error_arm[2] > limit:
             self.delta[2] = self.error_arm[2]
         elif self.error_arm[2] < -limit:
-            self.delta[2] = -self.error_arm[2]
+            self.delta[2] = self.error_arm[2]
         else:
             ok = True
             
         if self.error_arm[3] > limit:
             self.delta[3] = self.error_arm[3]
         elif self.error_arm[0] < -limit:
-            self.delta[3] = -self.error_arm[3]
+            self.delta[3] = self.error_arm[3]
         else:
             ok = True
 
