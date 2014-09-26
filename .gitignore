@@ -13,4 +13,4 @@ devel/*
 
 # osx fix
 .DS_Store
-
+install/*
