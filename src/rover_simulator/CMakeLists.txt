@@ -119,10 +119,10 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
- install(PROGRAMS
-   src/rover_simulator_node.py
-   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
- )
+ #install(PROGRAMS
+   #file
+   #DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ #)
 
 ## Mark executables and/or libraries for installation
 # install(TARGETS rover_simulator rover_simulator_node
