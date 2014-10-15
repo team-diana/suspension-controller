@@ -1,3 +1,4 @@
+* Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 * Copyright (c) 2013, Mattia Marenco
 * All rights reserved.
 *
