@@ -1,10 +1,10 @@
 # This file is released under a 3-clause BSD license, for
-# more details, please consult the license.txt file.
+# more details, please consult the LICENSE file.
 #
 # Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 # All rights reserved.
 
-from model.constants.config import MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE
+from model.constants.config import MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE, TORQUE_SAMPLE_SIZE
 
 from numpy import arccos, average
 
@@ -18,19 +18,18 @@ from tf.transformations import euler_from_quaternion
 from adc.msg import sosp_Adc
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from dynamixel_msgs.msg import JointState
-
 from sensor_msgs.msg import Imu, JointState as JointStateOut, Range
 from std_msgs.msg import Float64
-from suspension_controller.msg import STATUS_ASM
+from suspension_controller.msg import Status
 
 # services
 from adc.srv import movingService
 from dynamixel_controllers.srv import SetTorque
-from suspension_controller.srv import freeze, set_mode, set_height, stopAll
+from suspension_controller.srv import Freeze, SetMode, SetHeight, StopAll
 
 class Arm:
     def __init__(self, index):
-        self.torquef = [0] * 20
+        self.torquef = [0] * TORQUE_SAMPLE_SIZE
         self.pointer = 0
         self.torque = 0.0
         self.position = 0.0  # was self.pos_arm
@@ -53,12 +52,12 @@ class Arm:
         elif self.index == 4:
             self.location = 'p_r'
         else:
-            raise RuntimeError("Invalid index of wheel (%d must be 1, 2 ,3 or 4)" % self.index)
+            raise RuntimeError("Invalid index of wheel (%d must be 1-4)" % self.index)
 
     def read_arm_data(self, msg):
         self.torquef[self.pointer] = msg.load
 
-        if self.pointer == 19:
+        if self.pointer == TORQUE_SAMPLE_SIZE - 1:
             self.pointer = 0
         else:
             self.pointer += 1
@@ -113,10 +112,12 @@ class Arm:
 
         getattr(self.status_asm, "out_of_range_%d" % self.index)(self.out_of_range_sts)
 
-
     def delta_follower(self, limit):
         if self.error > limit or self.error < -limit:
             self.delta = self.error
+
+    def read_suspension_angle(self, msg):
+        self.suspension_angle = getattr(msg, "sosp%d" % self.index)
 
     # XXX: this is work in progress and completely broken
     def transfer_function(self):
@@ -210,9 +211,6 @@ class Arm:
             trans = [0] * 3
         self.angoli_chassis_virtuale = angles
         self.posa_chassis_virtuale = trans
-
-    def read_suspension_angle(self, msg):
-        self.suspension_angle = getattr(msg, "sosp%d" % self.index)
 
     def publish_phi(self):
         try:

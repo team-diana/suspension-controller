@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   roscpp
   std_msgs
+  numpy
   message_generation
 )
 
@@ -43,16 +44,16 @@ catkin_python_setup()
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   STATUS_ASM.msg
+   Status.msg
  )
 
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
-   set_height.srv
-   set_mode.srv
-   stopAll.srv
-   freeze.srv
+   SetHeight.srv
+   SetMode.srv
+   StopAll.srv
+   Freeze.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -80,7 +81,7 @@ catkin_python_setup()
 catkin_package(
   INCLUDE_DIRS include
 # LIBRARIES suspension_controller
-  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs numpy
 # DEPENDS system_lib
 )
 

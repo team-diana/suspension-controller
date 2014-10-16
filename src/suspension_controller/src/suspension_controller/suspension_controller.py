@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 
+# This code is a based on code by Mattia Marenco, which was
+# released under a 3-clause BSD.
+#
+# This file is released under a 3-clause BSD license, for
+# more details, please consult the LICENSE file.
+#
+# Current copyright:
+# Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
+# All rights reserved.
+#
+# Original copyright:
+# Copyright (c) 2013, Mattia Marenco <mattia.marenco@teamdiana.org>
+# All rights reserved.
+
 '''
-This code is a based on code by Mattia Marenco, which was
-released under a 3-clause BSD.
-
-This file is released under a 3-clause BSD license, for
-more details, please consult the license.txt file.
-
-Current copyright:
-Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
-All rights reserved.
-
-Original copyright:
-Copyright (c) 2013, Mattia Marenco <mattia.marenco@teamdiana.org>
-All rights reserved.
+THIS CODE IS BEING REFACTORED. DO NOT USE!
 '''
-
 
 from threading import Thread
 
@@ -24,10 +25,7 @@ from array import *
 import rospy
 import roslib
 
-from suspension_controller.srv import set_mode
-from suspension_controller.srv import set_height
-from suspension_controller.srv import stopAll
-from suspension_controller.srv import freeze
+from suspension_controller.srv import Freeze, SetMode, SetHeight, StopAll
 from dynamixel_controllers.srv import SetTorque
 from adc.srv import movingService
 
@@ -44,7 +42,7 @@ from adc.msg import sosp_Adc
 from std_msgs.msg import Float64
 from dynamixel_msgs.msg import JointState
 from sensor_msgs.msg import JointState as JointStateOut
-from suspension_controller.msg import STATUS_ASM
+from suspension_controller.msg import Status
 
 import tf
 from tf.transformations import euler_from_quaternion
@@ -86,7 +84,7 @@ class SuspensionController:
         self.joint_state_out.velocity = []
         self.joint_state_out.effort = []
         
-        self.status_asm = STATUS_ASM()
+        self.status_asm = Status()
         
         self.req_height = 0.25
         self.req_height_temp = 0.25
@@ -123,7 +121,7 @@ class SuspensionController:
 
         self.joint_state_out_pub = rospy.Publisher('/joint_states', JointStateOut)
         
-        self.status_asm_pub = rospy.Publisher('/status_asm', STATUS_ASM)
+        self.status_asm_pub = rospy.Publisher('/status_asm', Status)
         
         
         self.range_front_sub = rospy.Subscriber('/ADC/range_front_down', Range, self.process_range_front)
@@ -134,10 +132,10 @@ class SuspensionController:
 
         self.sus_sub = rospy.Subscriber('/ADC/suspension', sosp_Adc, self.process_suspension)
         
-        self.service_height = rospy.Service('suspension_controller/set_height', set_height, self.handle_set_height)
-        self.service_mode = rospy.Service('suspension_controller/set_mode', set_mode, self.handle_set_mode)
-        self.service_stop = rospy.Service('suspension_controller/stop_all', stopAll, self.handle_stopAll)
-        self.service_freeze = rospy.Service('suspension_controller/freeze', freeze, self.handle_freeze)
+        self.service_height = rospy.Service('suspension_controller/set_height', SetHeight, self.handle_set_height)
+        self.service_mode = rospy.Service('suspension_controller/set_mode', SetMode, self.handle_set_mode)
+        self.service_stop = rospy.Service('suspension_controller/stop_all', StopAll, self.handle_stopAll)
+        self.service_freeze = rospy.Service('suspension_controller/freeze', Freeze, self.handle_freeze)
 
     def stop(self):
         self.running = False
@@ -206,6 +204,8 @@ class SuspensionController:
                 self.pull_down()
         return [self.freeze]
 
+
+    # TODO: What are ang_p and ang_n?
     def initializa(self, id, init_pos):
         rospy.loginfo("Inizializza ruota %d (0 = tutte) da posizione %d (0 alzato, 1 a terra)", id, init_pos)
         
