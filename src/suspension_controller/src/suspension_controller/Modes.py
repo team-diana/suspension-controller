@@ -5,7 +5,8 @@
 # All rights reserved.
 
 class BaseMode:
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         raise Exception("Cannot instantiate object directly, use one of its sub-classes!")
 
     def run(self):
@@ -15,43 +16,72 @@ class Simulation(BaseMode):
     def __init__(self):
         self.name = "Simulation"
         self.name_it = "Simulazione"
-
         self.index = 0
 
     def run(self):
-        pass
+        self.node.get_tf()
+        self.node.calculate_fi()
 
 class Follower(BaseMode):
     def __init__(self):
         self.name = "Follower"
         self.name_it = "Inseguitore"
-
         self.index = 1
+
+    def run(self):
+        self.node.get_tf()
+        self.node.follower()
+#         self.node.pull_down_sts = ([False] * 4)
+        self.node.output_fi()
 
 class Observer(BaseMode):
     def __init__(self):
         self.name = "Observer"
         self.name_it = "Osservatore"
-
         self.index = 2
+
+    def run(self):
+        self.node.get_tf()
+        self.node.calculate_fi()
+#         self.node.delta = ([0.0] * 4)
+#         self.node.pull_down_sts = ([False] * 4)
+        self.node.output_fi()
 
 class WithAntilift(BaseMode):
     def __init__(self):
         self.name = "Observer with anti-lift control"
         self.name_it = "Osservatore con antisollevamento"
-
         self.index = 3
+
+    def run(self):
+        self.node.pull_down()
+        self.node.get_tf()
+        self.node.calculate_fi()
+#         self.node.delta = ([0.0] * 4)
+        self.node.output_fi()
 
 class WithFollower(BaseMode):
     def __init__(self):
         self.name = "Observer with follower control"
         self.name_it = "Osservatore con inseguitore"
-
         self.index = 0
+
+    def run(self):
+        self.node.get_tf()
+        self.node.follower()
+        self.node.calculate_fi()
+#         self.node.pull_down_sts = ([False] * 4)
+        self.node.output_fi()
 
 class WithAntiliftAndFollower(BaseMode):
     def __init__(self):
         self.name = "Observer with anti-lift and follower control"
         self.name_it = "Osservatore con antisollevamento e inseguitore"
-
         self.index = 0
+
+    def run(self):
+        self.node.pull_down()
+        self.node.get_tf()
+        self.node.follower()
+        self.node.calculate_fi()
+        self.node.output_fi()

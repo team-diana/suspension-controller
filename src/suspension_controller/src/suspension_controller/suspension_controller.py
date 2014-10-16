@@ -45,6 +45,7 @@ from tf.transformations import euler_from_quaternion
 import math
 
 from suspension_controller.SuspensionMode import SuspensionMode
+from suspension_controller.Modes import Observer, Follower, Simulation, WithAntilift, WithAntiliftAndFollower, WithFollower
 
 from suspension_controller.Arm import Arm
 
@@ -96,12 +97,12 @@ class SuspensionController:
         self.publish()
         
         rospy.loginfo("INIT")
-        
+
         time.sleep(2)  # todo mettere metodo piu' furbo per aspettare messaggi validi dalla scheda adc
-     
-        self.main()
 
         self.arms = [ Arm(1), Arm(2), Arm(3), Arm(4) ]
+
+        self.start()
 
 
     def publish(self):
@@ -163,13 +164,11 @@ class SuspensionController:
         return True
 
 
-
-    # TODO: why should this do anything?
     def handle_set_mode(self, req):
         '''
-        DEPRECATED: THIS METHOD SHOULD BE DELETED ALONG WITH ITS SERVICE!
+        This is a simple method that converts the value received from the service to python.
         '''
-        pass
+        self.mode = req.mode
 
 
     def handle_stop_all(self, req):
@@ -451,7 +450,7 @@ class SuspensionController:
 
         rospy.loginfo("Delta follower: %f %f %f %f", delta[0], delta[1], delta[2], delta[3])
 
-    def set_status(self):
+    def update_status(self):
         for arm in self.arms:
             arm.update_status()
         
@@ -470,55 +469,31 @@ class SuspensionController:
         self.status_asm_pub.publish(self.status_asm)
 
     
-    def main(self):
-        
-        count = 0
-        
+    def start(self):
+        mode = SuspensionMode(Simulation(self))
         while not rospy.is_shutdown():
-            
             if not self.freeze:
-                if self.mode == 0:  # solo simulazione
-                    self.get_tf()
-                    self.calculate_fi()
-                    self.delta = ([0.0] * 4)
-                    # print("coppia",self.torque)
-                elif self.mode == 1:  # solo inseguitore
-                    self.get_tf()
-                    # if count%10 == 0:
-                    self.follower()
-                    self.pull_down_sts = ([False] * 4)
-                    self.output_fi()
-                elif self.mode == 2:  # solo SIL
-                    self.get_tf()
-                    self.calculate_fi()
-                    self.delta = ([0.0] * 4)
-                    self.pull_down_sts = ([False] * 4)
-                    self.output_fi()
-                elif self.mode == 3:  # SIL + anti sollevamento
-                    self.pull_down()
-                    self.get_tf()
-                    self.calculate_fi()
-                    self.delta = ([0.0] * 4)
-                    self.output_fi()
-                elif self.mode == 4:  # SIL + inseguitore
-                    self.get_tf()
-                    self.follower()
-                    # if count%40 == 0:
-                    self.calculate_fi()
-                    self.pull_down_sts = ([False] * 4)
-                    self.output_fi()
-                elif self.mode == 5:  # SIL + inseguitore + anti soll
-                    self.pull_down()
-                    self.get_tf()
-                    self.follower()
-                    # if count%40 == 0:
-                    self.calculate_fi()
-                    self.output_fi()
+                if self.mode == 0:
+                    mode.run()
+                elif self.mode == 1:
+                    mode.set(Follower(self))
+                    mode.run()
+                elif self.mode == 2:
+                    mode.set(Observer(self))
+                    mode.run()
+                elif self.mode == 3:
+                    mode.set(WithAntilift(self))
+                    mode.run()
+                elif self.mode == 4:
+                    mode.set(WithFollower(self))
+                    mode.run()
+                elif self.mode == 5:
+                    mode.set(WithAntiliftAndFollower(self))
+                    mode.run()
+                else:
+                    raise Exception("Mode not recognized!")
 
-            
-            self.set_status()
-                
-            count += 1
+            self.update_status()
             self.rate.sleep()
 
 

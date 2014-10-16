@@ -119,6 +119,7 @@ class Arm:
     def read_suspension_angle(self, msg):
         self.suspension_angle = getattr(msg, "sosp%d" % self.index)
 
+    # TODO: This is a really ugly function
     def test_wheel(self, init_pos_high=True):
         if init_pos_high:
             ang_p = pi * 2.0
@@ -282,4 +283,3 @@ class Arm:
         self.joint_state_out.effort = []
         self.joint_state_out.header.stamp = rospy.Time.now()
         self.joint_state_out_pub.publish(self.joint_state_out)
-
