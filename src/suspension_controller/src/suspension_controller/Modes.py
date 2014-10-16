@@ -3,6 +3,10 @@
 #
 # Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 # All rights reserved.
+#
+# Based on code by Mattia Marenco:
+# Copyright (c) 2013, Mattia Marenco <mattia.marenco@teamdiana.org>
+# All rights reserved.
 
 class BaseMode:
     def __init__(self, node):
