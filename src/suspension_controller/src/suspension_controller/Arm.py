@@ -4,29 +4,23 @@
 # Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 # All rights reserved.
 
-from suspension_controller.constants.config import INITIZATION_LOCKING_DELAY, INITIZATION_SLEEP_DELAY, MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE, TORQUE_SAMPLE_SIZE
-
 from numpy import arccos, average, pi
 
 import roslib
 import rospy
 
 import time
+
 import tf
 from tf.transformations import euler_from_quaternion
 
-# messages
-from adc.msg import sosp_Adc
-from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from dynamixel_msgs.msg import JointState
-from sensor_msgs.msg import Imu, JointState as JointStateOut, Range
 from std_msgs.msg import Float64
-from suspension_controller.msg import Status
 
-# services
-from adc.srv import movingService
 from dynamixel_controllers.srv import SetTorque
 from suspension_controller.srv import Freeze, SetMode, SetHeight, StopAll
+
+from suspension_controller.constants.config import INITIZATION_LOCKING_DELAY, INITIZATION_SLEEP_DELAY, MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE, TORQUE_SAMPLE_SIZE
 
 class Arm:
     def __init__(self, index):
@@ -66,10 +60,10 @@ class Arm:
         avg = average(self.torquef)
 
         self.torque = avg
-        self.pos_arm = msg.current_pos
-        self.error_arm = msg.error
-        
-        self.motor_temp = int(msg.motor_temps[self.index])
+        self.pistion = msg.current_pos
+        self.error = msg.error
+
+        self.motor_temp = int(msg.motor_temps[self.index - 1])
 
     def publish(self):
         self.command_pub = rospy.Publisher('/motore_%d_controller/command' % self.index, Float64)
