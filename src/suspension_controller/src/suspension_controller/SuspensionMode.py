@@ -7,8 +7,8 @@
 class SuspensionMode:
     def __init__(self, mode):
         self.__mode = mode
-        self.delta = ([0.0] * 4)
-        self.pull_down_sts = ([False] * 4)
+#         self.delta = ([0.0] * 4)
+#         self.pull_down_sts = ([False] * 4)
     
     def change_mode(self, mode):
         self.__mode = mode

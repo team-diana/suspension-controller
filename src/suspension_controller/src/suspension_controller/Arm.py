@@ -4,13 +4,14 @@
 # Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 # All rights reserved.
 
-from model.constants.config import MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE, TORQUE_SAMPLE_SIZE
+from suspension_controller.constants.config import INITIZATION_LOCKING_DELAY, INITIZATION_SLEEP_DELAY, MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE, TORQUE_SAMPLE_SIZE
 
-from numpy import arccos, average
+from numpy import arccos, average, pi
 
 import roslib
 import rospy
 
+import time
 import tf
 from tf.transformations import euler_from_quaternion
 
@@ -68,9 +69,7 @@ class Arm:
         self.pos_arm = msg.current_pos
         self.error_arm = msg.error
         
-        # XXX: why is this always zero?!
-        # I think it should be 'self.index'
-        self.motor_temp = int(msg.motor_temps[0])
+        self.motor_temp = int(msg.motor_temps[self.index])
 
     def publish(self):
         self.command_pub = rospy.Publisher('/motore_%d_controller/command' % self.index, Float64)
@@ -79,7 +78,7 @@ class Arm:
         self.arm_status_sub = rospy.Subscriber('/motore_%d_controller/arm/state' % self.index, JointState, self.read_arm_data)
 
     def unpublish(self):
-        self.command_pub.unregister()  # this was missing in the original code
+        self.command_pub.unregister()
         self.command_arm_pub.unregister()
         self.command_tor_pub.unregister()
         self.arm_status_sub.unregister()
@@ -87,16 +86,17 @@ class Arm:
     def stop(self):
         try:
             motor_motion = rospy.ServiceProxy('/motore_%d_controller/set_torque' % self.index, SetTorque)
-            response = motor_motion(False)
+            resp = motor_motion(False)
             rospy.loginfo("Suspended motor_%d" % self.index)
-            return response.response
+            return resp.response
         except rospy.ServiceException as e:
             rospy.logerror("Stop service call failed: %s" % e)
+        return None
 
     def update_status(self):
         getattr(self.status_asm, "pos_%d" % self.index)(self.position)
 
-        getattr(self.status_asm, "mot_pos_%d" % self.index)(self.position + self.error)
+        getattr(self.status_asm, "motor_pos_%d" % self.index)(self.position + self.error)
 
         getattr(self.status_asm, "command_%d" % self.index)(self.phi)
         getattr(self.status_asm, "delta_%d" % self.index)(self.phi + self.delta)
@@ -104,7 +104,7 @@ class Arm:
         # TODO: What is self.Z_route?!
         getattr(self.status_asm, "height_%d" % self.index)(self.Z_route)
 
-        getattr(self.status_asm, "motor_%d_temp" % self.index)(self.motor_temp)
+        getattr(self.status_asm, "motor_temp_%d" % self.index)(self.motor_temp)
 
         getattr(self.status_asm, "load_%d" % self.index)(self.torque)
         
@@ -119,7 +119,61 @@ class Arm:
     def read_suspension_angle(self, msg):
         self.suspension_angle = getattr(msg, "sosp%d" % self.index)
 
+    def test_wheel(self, init_pos_high=True):
+        if init_pos_high:
+            ang_p = pi * 2.0
+            ang_n = 0.0
+        else:
+            ang_p = 0.0
+            ang_n = pi * 2.0
+
+        # wheels 2 and 3 should be linked
+        if self.index == 2 or self.index == 3:
+            angle = ang_n
+        else:
+            angle = ang_p
+
+        self.command_pub.publish(angle)
+        rospy.loginfo("Tested moving wheel %d", self.index)
+
+        time.sleep(INITIZATION_SLEEP_DELAY);
+
+        if init_pos_high:
+            ang_p = 0.5
+            ang_n = -0.5
+        else:
+            ang_p = -0.5
+            ang_n = 0.5
+
+        if self.index == 2 or self.index == 3:
+            angle = ang_n
+        else:
+            angle = ang_p
+
+        self.command_tor_pub.publish(angle)
+        rospy.loginfo("Tested stepping of wheel %d", self.index)
+
+        time.sleep(INITIZATION_SLEEP_DELAY);
+
+        if init_pos_high:
+            ang_p = pi
+            ang_n = -pi
+        else:
+            ang_p = -pi
+            ang_n = pi
+
+        if self.index == 2 or self.index == 3:
+            angle = ang_n
+        else:
+            angle = ang_p
+
+        rospy.loginfo("Testing locking of wheel %d", self.index)
+        for _ in range(0, 7):
+            self.command_pub.publish(angle)
+            time.sleep(INITIZATION_LOCKING_DELAY)
+
     # XXX: this is work in progress and completely broken
+    # look at mattia's thesis
     def transfer_function(self):
         rospy.loginfo("Getting transfer function for arm #%d..." % self.index)
 

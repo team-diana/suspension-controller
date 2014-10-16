@@ -1,19 +1,19 @@
 Header header
 
 float64 pos_1
-float64 mot_pos_1
+float64 motor_pos_1
 float64 command_1
 float64 delta_1
 float64 pos_2
-float64 mot_pos_2
+float64 motor_pos_2
 float64 command_2
 float64 delta_2
 float64 pos_3
-float64 mot_pos_3
+float64 motor_pos_3
 float64 command_3
 float64 delta_3
 float64 pos_4
-float64 mot_pos_4
+float64 motor_pos_4
 float64 command_4
 float64 delta_4
 
@@ -30,10 +30,10 @@ float64 roll
 float64 pitch
 bool    is_moving 
 
-int32   motor_1_temp
-int32   motor_2_temp
-int32   motor_3_temp
-int32   motor_4_temp
+int32   motor_temp_1
+int32   motor_temp_2
+int32   motor_temp_3
+int32   motor_temp_4
 
 float64 load_1
 float64 load_2

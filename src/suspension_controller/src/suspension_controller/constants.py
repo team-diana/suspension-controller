@@ -7,6 +7,8 @@
 class _const:
     def __init__(self):
         # add constants here:
+        self.INITIZATION_LOCKING_DELAY = 0.1
+        self.INITIZATION_SLEEP_DELAY = 4.0
         self.MIN_WHEEL_ANGLE = 0.39
         self.MAX_WHEEL_ANGLE = 1.22
         self.TORQUE_SAMPLE_SIZE = 20

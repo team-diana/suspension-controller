@@ -4,44 +4,54 @@
 # Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 # All rights reserved.
 
-class Simulation:
+class BaseMode:
+    def __init__(self):
+        raise Exception("Cannot instantiate object directly, use one of its sub-classes!")
+
+    def run(self):
+        raise Exception("Function not implemented!")
+
+class Simulation(BaseMode):
     def __init__(self):
         self.name = "Simulation"
         self.name_it = "Simulazione"
 
         self.index = 0
 
-class Inseguitore:
+    def run(self):
+        pass
+
+class Follower(BaseMode):
     def __init__(self):
-        self.name = "?"
+        self.name = "Follower"
         self.name_it = "Inseguitore"
 
         self.index = 1
 
-class Osservatore:
+class Observer(BaseMode):
     def __init__(self):
         self.name = "Observer"
         self.name_it = "Osservatore"
 
         self.index = 2
 
-class WithAntisollevamento:
+class WithAntilift(BaseMode):
     def __init__(self):
-        self.name = "?"
-        self.name_it = "Osservatore + antisollevamento"
+        self.name = "Observer with anti-lift control"
+        self.name_it = "Osservatore con antisollevamento"
 
         self.index = 3
 
-class WithInseguitore:
+class WithFollower(BaseMode):
     def __init__(self):
-        self.name = "?"
-        self.name_it = "Osservatore + inseguitore"
+        self.name = "Observer with follower control"
+        self.name_it = "Osservatore con inseguitore"
 
         self.index = 0
 
-class WithAntisollevamentoAndInseguitore:
+class WithAntiliftAndFollower(BaseMode):
     def __init__(self):
-        self.name = "?"
-        self.name_it = "Osservatore + antisollevamento + inseguitore"
+        self.name = "Observer with anti-lift and follower control"
+        self.name_it = "Osservatore con antisollevamento e inseguitore"
 
         self.index = 0

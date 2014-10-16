@@ -18,8 +18,6 @@
 THIS CODE IS BEING REFACTORED. DO NOT USE!
 '''
 
-from threading import Thread
-
 from array import *
 
 import rospy
@@ -28,8 +26,6 @@ import roslib
 from suspension_controller.srv import Freeze, SetMode, SetHeight, StopAll
 from dynamixel_controllers.srv import SetTorque
 from adc.srv import movingService
-
-import sys
 
 import time
 
@@ -47,20 +43,23 @@ from suspension_controller.msg import Status
 import tf
 from tf.transformations import euler_from_quaternion
 import math
-from model.SuspensionMode import SuspensionMode
+
+from suspension_controller.SuspensionMode import SuspensionMode
+
+from suspension_controller.Arm import Arm
 
 
 class SuspensionController:
     def __init__(self):
         rospy.init_node('suspension_controller', anonymous=True, log_level=rospy.DEBUG)
-        rospy.on_shutdown(self.on_shutdown)
+        rospy.on_shutdown(self.unpublish)
         
         self.diagnostics_rate = rospy.get_param('~diagnostics_rate', 1)  # stesso dei dynamixel
         self.speed = rospy.get_param('/motore_1_controller/joint_speed', 0.5)  # dovrebbe essere uguale per tutti
         self.hz = 40
         self.rate = rospy.Rate(self.hz)
-        self.deltaH_inertial = ([0.0] * 4)
-        self.deltaH_chassis = ([0.0] * 4)
+#         self.deltaH_inertial = ([0.0] * 4)
+#         self.deltaH_chassis = ([0.0] * 4)
         self.angoli_chassis = ([0.0] * 3)
         self.posa_chassis = ([0.0] * 3)
         self.angoli_chassis_virtuale = ([0.0] * 3)
@@ -72,11 +71,11 @@ class SuspensionController:
 #         self.fi = ([0.0] * 4)
 #         self.delta = ([0.0] * 4)
 #         self.Z_ruote = ([0.0] * 4)
-        self.deltaH_hub = ([0.0] * 4)
+#         self.deltaH_hub = ([0.0] * 4)
 #         self.angoli_sosp = ([0.0] * 4)
         
-        self.pull_down_sts = ([False] * 4)
-        self.out_of_range_sts = ([False] * 4)
+#         self.pull_down_sts = ([False] * 4)
+#         self.out_of_range_sts = ([False] * 4)
         
         self.joint_state_out = JointStateOut()
         self.joint_state_out.name = []
@@ -92,192 +91,145 @@ class SuspensionController:
         self.mode = 0
         self.freeze = False
         
-        self.pointer = ([0] * 4)
+#         self.pointer = ([0] * 4)
         
-        self.init_ok = False
-        self.init_pos = 0  # 0 down to up, 1 up to down
-
-        self.start()
+        self.publish()
         
         rospy.loginfo("INIT")
         
         time.sleep(2)  # todo mettere metodo piu' furbo per aspettare messaggi validi dalla scheda adc
      
         self.main()
-        
-        from model.Arm import Arm
 
         self.arms = [ Arm(1), Arm(2), Arm(3), Arm(4) ]
 
-    def on_shutdown(self):
-        self.stop()
-    
-    
-    def start(self):
-        self.running = True
 
+    def publish(self):
+        '''
+        This function starts all ROS publishers, services, subscribers, listeners and broadcasters. This function needs to be called early in the initialization process.
+        '''
         for arm in self.arms:
             arm.publish()
 
         self.joint_state_out_pub = rospy.Publisher('/joint_states', JointStateOut)
-        
         self.status_asm_pub = rospy.Publisher('/status_asm', Status)
-        
-        
+
         self.range_front_sub = rospy.Subscriber('/ADC/range_front_down', Range, self.process_range_front)
         self.range_post_sub = rospy.Subscriber('/ADC/range_post_down', Range, self.process_range_post)
- 
-        self.listener = tf.TransformListener()
-        self.br = tf.TransformBroadcaster()
+        self.sus_sub = rospy.Subscriber('/ADC/suspension', sosp_Adc, self.read_suspension_angles)
 
-        self.sus_sub = rospy.Subscriber('/ADC/suspension', sosp_Adc, self.process_suspension)
-        
         self.service_height = rospy.Service('suspension_controller/set_height', SetHeight, self.handle_set_height)
         self.service_mode = rospy.Service('suspension_controller/set_mode', SetMode, self.handle_set_mode)
         self.service_stop = rospy.Service('suspension_controller/stop_all', StopAll, self.handle_stopAll)
         self.service_freeze = rospy.Service('suspension_controller/freeze', Freeze, self.handle_freeze)
 
-    def stop(self):
-        self.running = False
-        
+        self.listener = tf.TransformListener()
+        self.br = tf.TransformBroadcaster()
+
+        self.running = True
+
+
+    # TODO: check if I need to stop the tf listeners and broadcasters
+    def unpublish(self):
+        '''
+        This function stops all ROS publishers, services, subscribers, listeners and broadcasters. This function needs to be called early in the initialization process.when the node is stopped.
+        '''
         for arm in self.arms:
             arm.unpublish()
-        
+
         self.joint_state_out_pub.unregister()
         self.status_asm_pub.unregister()
-        
+
         self.range_front_sub.unregister()
         self.range_post_sub.unregister()
         self.sus_sub.unregister()
-        
+
+        self.service_height.unregister()
+        self.service_mode.unregister()
+        self.service_stop.unregister()
+        self.service_freeze.unregister()
+
+        self.running = False
+
+
+    # TODO: what is the 0.05?
     def handle_set_height(self, req):
+        '''
+        This is a simple handler to set the height of the rover.
+        It always returns True.
+        '''
         self.req_height = req.height + 0.05
-        rospy.loginfo("Altezza settata a %f", req.height)
-        return [True]
+        rospy.loginfo("Height set at %f", req.height)
+        return True
 
 
+
+    # TODO: why should this do anything?
     def handle_set_mode(self, req):
-        from model.SuspensionMode  import SuspensionMode
-        from model.Modes import Simulation, Inseguitore, Osservatore, WithAntisollevamento, WithAntisollevamentoAndInseguitore, WithInseguitore
+        '''
+        DEPRECATED: THIS METHOD SHOULD BE DELETED ALONG WITH ITS SERVICE!
+        '''
+        pass
 
-        mode = SuspensionMode(Simulation())
-        
-        if req.mode == 0:
-            return mode.name_it
-        elif req.mode == 1:
-            mode.set_mode(Inseguitore())
-            return mode.name_it
-        elif req.mode == 2:
-            mode.set_mode(Osservatore())
-            return mode.name_it
-        elif req.mode == 3:
-            mode.set_mode(WithAntisollevamento())
-            return mode.name_it
-        elif req.mode == 4:
-            mode.set_mode(WithInseguitore())
-            return mode.name_it
-        elif req.mode == 5:
-            mode.set_mode(WithAntisollevamentoAndInseguitore())
-            return mode.name_it
+
+    def handle_stop_all(self, req):
+        '''
+        This handler tries to stop the motion of all the wheels. It handles requests for the StopAll service.
+        It returns True if and only if it succeeds in stopping all wheels.
+        '''
+        responses = []
+        res = True
+        for arm in self.arms:
+            resp = arm.stop()
+            # if we have failed to stop one of them, save it to avoid bitwise AND, but still try to stop the others
+            if resp is None:
+                res = False
+            responses.append(resp)
+        if res == True:
+            return responses[0] & responses[1] & responses[2] & responses[3]
         else:
-            raise RuntimeError("Invalid mode %d, must be between 0-5." % req.mode)
+            return res
 
-    def handle_stopAll(self, req):
-        try:
-            responses = []
-            for arm in self.arms:
-                responses.append(arm.stop())
-            return [ responses[0] & responses[1] & responses[2] & responses[3] ]
-        except rospy.ServiceException as e:
-            rospy.logerror("Stop service call failed: %s" % e)
-        return []
-        
+
+    # TODO: figure out the logic
     def handle_freeze(self, req):
         self.freeze = req.freeze
-        rospy.loginfo("Richiesta freeze %b", self.freeze)
+
         if self.freeze:
+            rospy.loginfo("System freeze requested")
             self.get_tf()
             self.calculate_fi()
             self.delta = ([0.0] * 4)
             self.output_fi()
             while min(self.torque) < 0.1 :
                 self.pull_down()
-        return [self.freeze]
+        return self.freeze
 
 
     # TODO: What are ang_p and ang_n?
-    def initializa(self, id, init_pos):
-        rospy.loginfo("Inizializza ruota %d (0 = tutte) da posizione %d (0 alzato, 1 a terra)", id, init_pos)
-        
-        if init_pos == 0:
-            ang_p = 6.28
-            ang_n = 0.0
-        elif init_pos == 1:
-            ang_p = 0.0
-            ang_n = 6.28
-        else:
-            return[]
-            
-        if id == 0 or id == 1:
-            self.command_1_pub.publish(ang_p)  # 1 positiva
-        if id == 0 or id == 2:
-            self.command_2_pub.publish(ang_n)  # 2 negativa
-        if id == 0 or id == 3:
-            self.command_3_pub.publish(ang_n)  # 3 negativa
-        if id == 0 or id == 4:
-            self.command_4_pub.publish(ang_p)  # 4 positiva
-        rospy.loginfo("Movimento")
-        time.sleep(5.0);
-        
-        if init_pos == 0:
-            ang_p = 0.5  # una velocita'!
-            ang_n = -0.5
-        else:
-            ang_p = -0.5
-            ang_n = 0.5
-            
-        if id == 0 or id == 1:
-            self.command_tor1_pub.publish(ang_p)
-        if id == 0 or id == 2:
-            self.command_tor2_pub.publish(ang_n)
-        if id == 0 or id == 3:
-            self.command_tor3_pub.publish(ang_n)
-        if id == 0 or id == 4:
-            self.command_tor4_pub.publish(ang_p)
-        rospy.loginfo("Step")
-        time.sleep(4.0);
-        
-        if init_pos == 0:
-            ang_p = 3.14
-            ang_n = -3.14
-        else:
-            ang_p = -3.14
-            ang_n = 3.14
-        
-        rospy.loginfo("Bloccaggio")
-        for i in range(0, 7):
-            if id == 0 or id == 1:
-                self.command_1_pub.publish(ang_p)
-            if id == 0 or id == 2:
-                self.command_2_pub.publish(ang_n)
-            if id == 0 or id == 3:
-                self.command_3_pub.publish(ang_n)
-            if id == 0 or id == 4:
-                self.command_4_pub.publish(ang_p)
-            time.sleep(0.1);
+    def test_arms(self, init_pos_high=True):
+        rospy.loginfo("Testing wheels with initial position high? %b", init_pos_high)
+
+        for arm in self.arms:
+            arm.test_wheel(init_pos_high)
+
 
     def diagnostics_processor(self):
         self.rate.sleep()
 
+
     def process_range_front(self, msg):
         self.range_front = msg.range
+
         
     def process_range_post(self, msg):
         self.range_post = msg.range
 
-    def process_suspension(self, msg):
+
+    def read_suspension_angles(self, msg):
         for arm in self.arms:
             arm.read_suspension_angle(msg)
+
 
     def get_tf(self):
         rospy.loginfo("get TF")
