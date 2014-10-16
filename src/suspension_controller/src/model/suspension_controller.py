@@ -405,34 +405,10 @@ class SuspensionController:
         pitch = self.angoli_chassis[1]
         
         limit = 0.05
-        
-        if math.fabs(pitch) > limit or math.fabs(roll) or math.fabs(self.deltaH_chassis_virtuale) > limit:
-            for i in range(0, 4):
-                try:
-                    self.fi[i] = math.acos((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i]) / 0.20)
-                except (ValueError):
-                    rospy.logwarn("out_of_range on wheel %i", i + 1)
-                    if ((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i]) / 0.20) > 1:
-                        self.fi[i] = 0.39
-                    elif ((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote[i]) / 0.20) < 0:
-                        self.fi[i] = 1.22
-                    continue
 
-                self.joint_state_out.name = []
-                self.joint_state_out.position = []
-                self.joint_state_out.velocity = []
-                self.joint_state_out.effort = []
-                if i == 0:
-                    self.joint_state_out.name.append("hub_f_l_virtuale")
-                elif i == 1:
-                    self.joint_state_out.name.append("hub_p_l_virtuale")
-                elif i == 2:
-                    self.joint_state_out.name.append("hub_f_r_virtuale")
-                elif i == 3:
-                    self.joint_state_out.name.append("hub_p_r_virtuale")
-                self.joint_state_out.position.append(self.fi[i] + self.delta[i])
-                self.joint_state_out.header.stamp = rospy.Time.now()
-                self.joint_state_out_pub.publish(self.joint_state_out)
+        for arm in self.arms:
+            if math.fabs(pitch) > limit or math.fabs(roll) > limit or math.fabs(self.deltaH_chassis_virtuale) > limit:
+                arm.publish_phi()
                 
         rospy.loginfo("angolo virtuale: %f %f %f %f", self.fi[0], self.fi[1], self.fi[2], self.fi[3])
         

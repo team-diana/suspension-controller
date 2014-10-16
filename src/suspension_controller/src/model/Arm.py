@@ -4,9 +4,10 @@
 # Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 # All rights reserved.
 
-from numpy import average
+from numpy import average, arccos
 from dynamixel_controllers.srv import SetTorque
 
+from model.constants import *
 
 class Arm:
     def __init__(self, index):
@@ -14,11 +15,13 @@ class Arm:
         self.pointer = 0
         self.torque = 0.0
         self.position = 0.0  # was self.pos_arm
-        self.error = 0.0  # was error_arm
+        self.error = 0.0  # was self.error_arm
         self.motor_temp = 0.0
         self.delta = 0.0
 
-        self.angle_suspension = 0.0  # was angoli_sosp
+        self.angle_suspension = 0.0  # was self.angoli_sosp
+
+        self.phi = 0.0  # was self.fi
 
         # This might be needed
         self.index = index
@@ -184,14 +187,31 @@ class Arm:
             rospy.logdebug("angoli chassis_virtuale: %f %f %f", angles[0], angles[1], angles[2])
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.logwarn('no_info base_link toi chassis_virtuale')  # continue)
-            angles = [0, 0, 0]
-            trans = [0, 0, 0]
+            angles = [0] * 3
+            trans = [0] * 3
         self.angoli_chassis_virtuale = angles
         self.posa_chassis_virtuale = trans
 
     def process_suspension(self, msg):
         self.angle_suspension = getattr(msg, "sosp%d" % self.index)
 
+    def publish_phi(self):
+        try:
+            self.phi = arccos((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote) / 0.20)
+        except ValueError:
+            rospy.logwarn("out_of_range on wheel %i", self.index)
+            if ((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote) / 0.20) > 1.:
+                self.phi = MIN_WHEEL_ANGLE
+            elif ((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote) / 0.20) < 0.:
+                self.phi = MAX_WHEEL_ANGLE
+
+       self.joint_state_out.name = [ "hub_%s_virtuale" % self.location ]
+       self.joint_state_out.position = [ self.phi + self.delta ]
+       self.joint_state_out.velocity = []
+       self.joint_state_out.effort = []
+
+       self.joint_state_out.header.stamp = rospy.Time.now()
+       self.joint_state_out_pub.publish(self.joint_state_out)
 
 if __name__ == '__main__':
     arm1 = Arm(1)
