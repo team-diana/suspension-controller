@@ -71,11 +71,11 @@ class SuspensionController:
         self.range_front = 0.4
         self.range_post = 0.4
         self.deltaH_chassis_virtuale = 0.0
-        self.fi = ([0.0] * 4)
-        self.delta = ([0.0] * 4)
-        self.Z_ruote = ([0.0] * 4)
+#         self.fi = ([0.0] * 4)
+#         self.delta = ([0.0] * 4)
+#         self.Z_ruote = ([0.0] * 4)
         self.deltaH_hub = ([0.0] * 4)
-        self.angoli_sosp = ([0.0] * 4)
+#         self.angoli_sosp = ([0.0] * 4)
         
         self.pull_down_sts = ([False] * 4)
         self.out_of_range_sts = ([False] * 4)
@@ -109,7 +109,7 @@ class SuspensionController:
         
         from model.Arm import Arm
 
-        self.arms = [Arm(1), Arm(2), Arm(3), Arm(4)]
+        self.arms = [ Arm(1), Arm(2), Arm(3), Arm(4) ]
 
     def on_shutdown(self):
         self.stop()

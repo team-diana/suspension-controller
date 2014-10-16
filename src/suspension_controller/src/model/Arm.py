@@ -4,7 +4,7 @@
 # Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 # All rights reserved.
 
-from model.constants import *
+from model.constants.config import MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE
 
 from numpy import arccos, average
 
@@ -55,7 +55,7 @@ class Arm:
         else:
             raise RuntimeError("Invalid index of wheel (%d must be 1, 2 ,3 or 4)" % self.index)
 
-    def process_arm(self, msg):
+    def read_arm_data(self, msg):
         self.torquef[self.pointer] = msg.load
 
         if self.pointer == 19:
@@ -77,7 +77,7 @@ class Arm:
         self.command_pub = rospy.Publisher('/motore_%d_controller/command' % self.index, Float64)
         self.command_arm_pub = rospy.Publisher('/motore_%d_controller/arm/command' % self.index, Float64)
         self.command_tor_pub = rospy.Publisher('/motore_%d_controller/vel_tor/command' % self.index, Float64)
-        self.arm_status_sub = rospy.Subscriber('/motore_%d_controller/arm/state' % self.index, JointState, self.process_arm)
+        self.arm_status_sub = rospy.Subscriber('/motore_%d_controller/arm/state' % self.index, JointState, self.read_arm_data)
 
     def unpublish(self):
         self.command_pub.unregister()  # this was missing in the original code
@@ -231,15 +231,3 @@ class Arm:
         self.joint_state_out.header.stamp = rospy.Time.now()
         self.joint_state_out_pub.publish(self.joint_state_out)
 
-if __name__ == '__main__':
-    arm1 = Arm(1)
-    arm2 = Arm(2)
-    arm3 = Arm(3)
-    arm4 = Arm(4)
-
-    msg = {}
-
-    arm1.process_arm(msg)
-    arm2.process_arm(msg)
-    arm3.process_arm(msg)
-    arm4.process_arm(msg)
