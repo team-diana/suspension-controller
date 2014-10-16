@@ -5,6 +5,7 @@
 # All rights reserved.
 
 from numpy import average
+from dynamixel_controllers.srv import SetTorque
 
 
 class Arm:
@@ -16,6 +17,8 @@ class Arm:
         self.error = 0.0  # was error_arm
         self.motor_temp = 0.0
         self.delta = 0.0
+
+        self.angle_suspension = 0.0  # was angoli_sosp
 
         # This might be needed
         self.index = index
@@ -48,17 +51,26 @@ class Arm:
         # I think it should be 'self.index'
         self.motor_temp = int(msg.motor_temps[0])
 
-    def start(self):
+    def publish(self):
         self.command_pub = rospy.Publisher('/motore_%d_controller/command' % self.index, Float64)
         self.command_arm_pub = rospy.Publisher('/motore_%d_controller/arm/command' % self.index, Float64)
         self.command_tor_pub = rospy.Publisher('/motore_%d_controller/vel_tor/command' % self.index, Float64)
         self.arm_status_sub = rospy.Subscriber('/motore_%d_controller/arm/state' % self.index, JointState, self.process_arm)
 
-    def stop(self):
+    def unpublish(self):
         self.command_pub.unregister()  # this was missing in the original code
         self.command_arm_pub.unregister()
         self.command_tor_pub.unregister()
         self.arm_status_sub.unregister()
+
+    def stop(self):
+        try:
+            motor_motion = rospy.ServiceProxy('/motore_%d_controller/set_torque' % self.index, SetTorque)
+            response = motor_motion(False)
+            rospy.loginfo("Suspended motor_%d" % self.index)
+            return response.response
+        except rospy.ServiceException as e:
+            rospy.logerror("Stop service call failed: %s" % e)
 
     def update_status(self):
         getattr(self.status_asm, "pos_%d" % self.index)(self.position)
@@ -82,9 +94,10 @@ class Arm:
     def delta_follower(self, limit):
         if self.error > limit or self.error < -limit:
             self.delta = self.error
-    
+
+    # XXX: this is work in progress and completely broken
     def transfer_function(self):
-        rospy.loginfo("Getting transfer function...")
+        rospy.loginfo("Getting transfer function for arm #%d..." % self.index)
 
         try:
             (trans, rot) = self.listener.lookupTransform('chassis', 'wheel_%s' % self.location, rospy.Time(0))
@@ -96,7 +109,7 @@ class Arm:
 #         rospy.logdebug("distanza ruote da chassis: %f %f %f %f", self.deltaH_chassis[0], self.deltaH_chassis[1], self.deltaH_chassis[2], self.deltaH_chassis[3])
         
         try:
-            (trans, rot) = self.listener.lookupTransform('inertial', 'wheel_%s'%self.location, rospy.Time(0))
+            (trans, rot) = self.listener.lookupTransform('inertial', 'wheel_%s' % self.location, rospy.Time(0))
             self.deltaH_inertial = -trans[2] + 0.090
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.logwarn("no_info inertial to wheel %i", self.index)
@@ -126,7 +139,7 @@ class Arm:
 
         
         try:
-            (trans, rot) = self.listener.lookupTransform('base_link', 'wheel_%s'%self.location, rospy.Time(0))
+            (trans, rot) = self.listener.lookupTransform('base_link', 'wheel_%s' % self.location, rospy.Time(0))
             self.Z_ruote = trans[2]
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.logwarn("no_info base_link to wheel %i", self.index)
@@ -175,6 +188,10 @@ class Arm:
             trans = [0, 0, 0]
         self.angoli_chassis_virtuale = angles
         self.posa_chassis_virtuale = trans
+
+    def process_suspension(self, msg):
+        self.angle_suspension = getattr(msg, "sosp%d" % self.index)
+
 
 if __name__ == '__main__':
     arm1 = Arm(1)

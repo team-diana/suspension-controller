@@ -49,6 +49,7 @@ from suspension_controller.msg import STATUS_ASM
 import tf
 from tf.transformations import euler_from_quaternion
 import math
+from model.SuspensionMode import SuspensionMode
 
 
 class SuspensionController:
@@ -118,7 +119,7 @@ class SuspensionController:
         self.running = True
 
         for arm in self.arms:
-            arm.start()
+            arm.publish()
 
         self.joint_state_out_pub = rospy.Publisher('/joint_states', JointStateOut)
         
@@ -142,7 +143,7 @@ class SuspensionController:
         self.running = False
         
         for arm in self.arms:
-            arm.stop()
+            arm.unpublish()
         
         self.joint_state_out_pub.unregister()
         self.status_asm_pub.unregister()
@@ -158,44 +159,37 @@ class SuspensionController:
 
 
     def handle_set_mode(self, req):
-        self.mode = req.mode
-        response = []
+        from model.SuspensionMode  import SuspensionMode
+        from model.Modes import Simulation, Inseguitore, Osservatore, WithAntisollevamento, WithAntisollevamentoAndInseguitore, WithInseguitore
+
+        mode = SuspensionMode(Simulation())
+        
         if req.mode == 0:
-            self.delta = ([0.0] * 4)
-            response = "Simulazione"
+            return mode.name_it
         elif req.mode == 1:
-            self.pull_down_sts = ([False] * 4)
-            response = "Inseguitore"
+            mode.set_mode(Inseguitore())
+            return mode.name_it
         elif req.mode == 2:
-            self.delta = ([0.0] * 4)
-            self.pull_down_sts = ([False] * 4)
-            response = "Osservatore"
+            mode.set_mode(Osservatore())
+            return mode.name_it
         elif req.mode == 3:
-            self.delta = ([0.0] * 4)
-            response = "Osservatore + antisollevamento"
+            mode.set_mode(WithAntisollevamento())
+            return mode.name_it
         elif req.mode == 4:
-            self.pull_down_sts = ([False] * 4)
-            response = "Osservatore + inseguitore"
+            mode.set_mode(WithInseguitore())
+            return mode.name_it
         elif req.mode == 5:
-            response = "Osservatore + inseguitore + antisollevamento"
+            mode.set_mode(WithAntisollevamentoAndInseguitore())
+            return mode.name_it
         else:
-            response = "Not supported"
-            self.mode = 0
-        rospy.loginfo("Mode set to %i", self.mode)
-        return [response]
+            raise RuntimeError("Invalid mode %d, must be between 0-5." % req.mode)
 
     def handle_stopAll(self, req):
         try:
-            stop1 = rospy.ServiceProxy('/motore_1_controller/set_torque', SetTorque)
-            resp1 = stop1(False)
-            stop2 = rospy.ServiceProxy('/motore_2_controller/set_torque', SetTorque)
-            resp2 = stop2(False)
-            stop3 = rospy.ServiceProxy('/motore_3_controller/set_torque', SetTorque)
-            resp3 = stop3(False)
-            stop4 = rospy.ServiceProxy('/motore_4_controller/set_torque', SetTorque)
-            resp4 = stop4(False)
-            rospy.loginfo("Sospensioni rilasciate")
-            return [resp1.response & resp2.response & resp3.response & resp4.response]
+            responses = []
+            for arm in self.arms:
+                responses.append(arm.stop())
+            return [ responses[0] & responses[1] & responses[2] & responses[3] ]
         except rospy.ServiceException as e:
             rospy.logerror("Stop service call failed: %s" % e)
         return []
@@ -281,16 +275,9 @@ class SuspensionController:
     def process_range_post(self, msg):
         self.range_post = msg.range
 
-
-    
-        
     def process_suspension(self, msg):
-        self.angoli_sosp[0] = msg.sosp1
-        self.angoli_sosp[1] = msg.sosp2
-        self.angoli_sosp[2] = msg.sosp3
-        self.angoli_sosp[3] = msg.sosp4
-
-
+        for arm in self.arms:
+            arm.process_suspension()
 
     def get_tf(self):
         rospy.loginfo("get TF")
@@ -411,9 +398,9 @@ class SuspensionController:
 
 
     def calculate_fi(self):
-        step = 0.0
-        roll = 0.0
-        pitch = 0.0
+#         step = 0.0
+#         roll = 0.0
+#         pitch = 0.0
         roll = self.angoli_chassis[0]
         pitch = self.angoli_chassis[1]
         
