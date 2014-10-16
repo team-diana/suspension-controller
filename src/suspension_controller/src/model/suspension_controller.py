@@ -277,7 +277,7 @@ class SuspensionController:
 
     def process_suspension(self, msg):
         for arm in self.arms:
-            arm.process_suspension()
+            arm.read_suspension_angle(msg)
 
     def get_tf(self):
         rospy.loginfo("get TF")

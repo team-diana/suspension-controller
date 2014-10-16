@@ -4,10 +4,29 @@
 # Copyright (c) 2014, Tamer Saadeh <tamer@tamersaadeh.com>
 # All rights reserved.
 
-from numpy import average, arccos
-from dynamixel_controllers.srv import SetTorque
-
 from model.constants import *
+
+from numpy import arccos, average
+
+import roslib
+import rospy
+
+import tf
+from tf.transformations import euler_from_quaternion
+
+# messages
+from adc.msg import sosp_Adc
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
+from dynamixel_msgs.msg import JointState
+
+from sensor_msgs.msg import Imu, JointState as JointStateOut, Range
+from std_msgs.msg import Float64
+from suspension_controller.msg import STATUS_ASM
+
+# services
+from adc.srv import movingService
+from dynamixel_controllers.srv import SetTorque
+from suspension_controller.srv import freeze, set_mode, set_height, stopAll
 
 class Arm:
     def __init__(self, index):
@@ -19,7 +38,7 @@ class Arm:
         self.motor_temp = 0.0
         self.delta = 0.0
 
-        self.angle_suspension = 0.0  # was self.angoli_sosp
+        self.suspension_angle = 0.0  # was self.angoli_sosp
 
         self.phi = 0.0  # was self.fi
 
@@ -80,9 +99,10 @@ class Arm:
 
         getattr(self.status_asm, "mot_pos_%d" % self.index)(self.position + self.error)
 
-        # TODO: What is self.fi, self.delta and self.Z_route?!
-        getattr(self.status_asm, "command_%d" % self.index)(self.fi)
-        getattr(self.status_asm, "delta_%d" % self.index)(self.fi + self.delta)
+        getattr(self.status_asm, "command_%d" % self.index)(self.phi)
+        getattr(self.status_asm, "delta_%d" % self.index)(self.phi + self.delta)
+
+        # TODO: What is self.Z_route?!
         getattr(self.status_asm, "height_%d" % self.index)(self.Z_route)
 
         getattr(self.status_asm, "motor_%d_temp" % self.index)(self.motor_temp)
@@ -177,8 +197,7 @@ class Arm:
         self.joint_state_out.position.append(-self.angoli_chassis[1])
         self.joint_state_out.header.stamp = rospy.Time.now()
         self.joint_state_out_pub.publish(self.joint_state_out)
-        
-        
+
         try:
             (trans, rot) = self.listener.lookupTransform('base_link', 'chassis_virtuale', rospy.Time(0))
             rospy.logdebug("posizione chassis_virtuale: %f %f %f", trans[0], trans[1], trans[2])
@@ -192,8 +211,8 @@ class Arm:
         self.angoli_chassis_virtuale = angles
         self.posa_chassis_virtuale = trans
 
-    def process_suspension(self, msg):
-        self.angle_suspension = getattr(msg, "sosp%d" % self.index)
+    def read_suspension_angle(self, msg):
+        self.suspension_angle = getattr(msg, "sosp%d" % self.index)
 
     def publish_phi(self):
         try:
@@ -205,13 +224,12 @@ class Arm:
             elif ((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote) / 0.20) < 0.:
                 self.phi = MAX_WHEEL_ANGLE
 
-       self.joint_state_out.name = [ "hub_%s_virtuale" % self.location ]
-       self.joint_state_out.position = [ self.phi + self.delta ]
-       self.joint_state_out.velocity = []
-       self.joint_state_out.effort = []
-
-       self.joint_state_out.header.stamp = rospy.Time.now()
-       self.joint_state_out_pub.publish(self.joint_state_out)
+        self.joint_state_out.name = [ "hub_%s_virtuale" % self.location ]
+        self.joint_state_out.position = [ self.phi + self.delta ]
+        self.joint_state_out.velocity = []
+        self.joint_state_out.effort = []
+        self.joint_state_out.header.stamp = rospy.Time.now()
+        self.joint_state_out_pub.publish(self.joint_state_out)
 
 if __name__ == '__main__':
     arm1 = Arm(1)
