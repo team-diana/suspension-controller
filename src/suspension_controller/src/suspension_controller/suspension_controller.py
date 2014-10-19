@@ -26,10 +26,9 @@ from std_msgs.msg import Float64
 from sensor_msgs.msg import JointState
 from suspension_controller.msg import Status
 
-from suspension_controller.SuspensionMode import SuspensionMode
-from suspension_controller.Modes import BaseMode, Observer, Follower, Simulation, WithAntilift, WithAntiliftAndFollower, WithFollower
+from suspension_controller.suspension_modes import BaseMode, Observer, Follower, Simulation, SuspensionMode, WithAntilift, WithAntiliftAndFollower, WithFollower
 
-from suspension_controller.Wheel import Wheel
+from suspension_controller.wheel import Wheel
 
 from suspension_controller.constants.config import INIT_ADC_WAIT_PERIOD
 

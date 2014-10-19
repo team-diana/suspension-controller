@@ -8,6 +8,16 @@
 # Copyright (c) 2013, Mattia Marenco <mattia.marenco@teamdiana.org>
 # All rights reserved.
 
+class SuspensionMode:
+    def __init__(self, mode):
+        self.__mode = mode
+
+    def set(self, mode):
+        self.__mode = mode
+
+    def __getattr__(self, name):
+        return getattr(self.__mode, name)
+
 class BaseMode:
     def __init__(self, node):
         self.node = node
