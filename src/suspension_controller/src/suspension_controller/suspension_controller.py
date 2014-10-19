@@ -51,7 +51,7 @@ class SuspensionController:
         self.range_post = 0.4
 
         self.status_asm = Status()
-        
+
         self.req_height = 0.25
         self.req_height_temp = 0.25
         self.recovery_height = False
@@ -188,7 +188,7 @@ class SuspensionController:
     def process_range_front(self, msg):
         self.range_front = msg.range
 
-        
+
     def process_range_post(self, msg):
         self.range_post = msg.range
 
@@ -252,7 +252,7 @@ class SuspensionController:
         self.status_asm.header.stamp = rospy.Time.now()
         self.status_asm_pub.publish(self.status_asm)
 
-    
+
     def start(self):
         mode = SuspensionMode(BaseMode)
         while not rospy.is_shutdown():

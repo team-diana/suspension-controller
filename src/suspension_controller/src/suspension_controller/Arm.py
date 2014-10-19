@@ -112,7 +112,7 @@ class Arm:
         getattr(status, "motor_temp_%d" % self.index)(self.motor_temp)
 
         getattr(status, "load_%d" % self.index)(self.torque)
-        
+
         getattr(status, "pull_down_%d" % self.index)(self.pull_down_sts)
 
         getattr(status, "out_of_range_%d" % self.index)(self.out_of_range_sts)

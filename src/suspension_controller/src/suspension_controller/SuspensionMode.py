@@ -7,7 +7,7 @@
 class SuspensionMode:
     def __init__(self, mode):
         self.__mode = mode
-    
+
     def set(self, mode):
         self.__mode = mode
 

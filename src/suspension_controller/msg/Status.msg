@@ -28,7 +28,7 @@ float64 inertial_height
 
 float64 roll
 float64 pitch
-bool    is_moving 
+bool    is_moving
 
 int32   motor_temp_1
 int32   motor_temp_2
@@ -41,11 +41,11 @@ float64 load_3
 float64 load_4
 
 int32   mode
-bool    pull_down_1 
-bool    pull_down_2 
-bool    pull_down_3 
-bool    pull_down_4 
-bool    out_of_range_1 
-bool    out_of_range_2 
-bool    out_of_range_3 
-bool    out_of_range_4 
+bool    pull_down_1
+bool    pull_down_2
+bool    pull_down_3
+bool    pull_down_4
+bool    out_of_range_1
+bool    out_of_range_2
+bool    out_of_range_3
+bool    out_of_range_4
