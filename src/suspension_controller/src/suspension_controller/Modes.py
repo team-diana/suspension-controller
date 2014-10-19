@@ -24,7 +24,7 @@ class Simulation(BaseMode):
 
     def run(self):
         self.node.get_tf()
-        self.node.calculate_fi()
+        self.node.calculate_phi()
 
 class Follower(BaseMode):
     def __init__(self):
@@ -36,7 +36,7 @@ class Follower(BaseMode):
         self.node.get_tf()
         self.node.follower()
 #         self.node.pull_down_sts = ([False] * 4)
-        self.node.output_fi()
+        self.node.output_phi()
 
 class Observer(BaseMode):
     def __init__(self):
@@ -46,10 +46,10 @@ class Observer(BaseMode):
 
     def run(self):
         self.node.get_tf()
-        self.node.calculate_fi()
+        self.node.calculate_phi()
 #         self.node.delta = ([0.0] * 4)
 #         self.node.pull_down_sts = ([False] * 4)
-        self.node.output_fi()
+        self.node.output_phi()
 
 class WithAntilift(BaseMode):
     def __init__(self):
@@ -60,9 +60,9 @@ class WithAntilift(BaseMode):
     def run(self):
         self.node.pull_down()
         self.node.get_tf()
-        self.node.calculate_fi()
+        self.node.calculate_phi()
 #         self.node.delta = ([0.0] * 4)
-        self.node.output_fi()
+        self.node.output_phi()
 
 class WithFollower(BaseMode):
     def __init__(self):
@@ -73,9 +73,9 @@ class WithFollower(BaseMode):
     def run(self):
         self.node.get_tf()
         self.node.follower()
-        self.node.calculate_fi()
+        self.node.calculate_phi()
 #         self.node.pull_down_sts = ([False] * 4)
-        self.node.output_fi()
+        self.node.output_phi()
 
 class WithAntiliftAndFollower(BaseMode):
     def __init__(self):
@@ -87,5 +87,5 @@ class WithAntiliftAndFollower(BaseMode):
         self.node.pull_down()
         self.node.get_tf()
         self.node.follower()
-        self.node.calculate_fi()
-        self.node.output_fi()
+        self.node.calculate_phi()
+        self.node.output_phi()
