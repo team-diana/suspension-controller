@@ -26,7 +26,7 @@ from suspension_controller.srv import Freeze, SetMode, SetHeight, StopAll
 
 from suspension_controller.constants.config import MAX_PHI_ANGLE, MIN_PHI_ANGLE, MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE, TEST_LOCKING_DELAY, TEST_SLEEP_DELAY, TORQUE_MAX_LOAD, TORQUE_SAMPLE_SIZE
 
-class Arm:
+class Wheel:
     def __init__(self, index):
         self.torquef = [0] * TORQUE_SAMPLE_SIZE
         self.pointer = 0
@@ -60,7 +60,7 @@ class Arm:
         else:
             raise RuntimeError("Invalid index of wheel (%d must be 1-4)" % self.index)
 
-    def read_arm_data(self, msg):
+    def read_wheel_data(self, msg):
         self.torquef[self.pointer] = msg.load
 
         if self.pointer == TORQUE_SAMPLE_SIZE - 1:
@@ -78,15 +78,15 @@ class Arm:
 
     def publish(self):
         self.command_pub = rospy.Publisher('/motore_%d_controller/command' % self.index, Float64)
-        self.command_arm_pub = rospy.Publisher('/motore_%d_controller/arm/command' % self.index, Float64)
+        self.command_wheel_pub = rospy.Publisher('/motore_%d_controller/arm/command' % self.index, Float64)
         self.command_tor_pub = rospy.Publisher('/motore_%d_controller/vel_tor/command' % self.index, Float64)
-        self.arm_status_sub = rospy.Subscriber('/motore_%d_controller/arm/state' % self.index, JointState, self.read_arm_data)
+        self.wheel_status_sub = rospy.Subscriber('/motore_%d_controller/arm/state' % self.index, JointState, self.read_wheel_data)
 
     def unpublish(self):
         self.command_pub.unregister()
-        self.command_arm_pub.unregister()
+        self.command_wheel_pub.unregister()
         self.command_tor_pub.unregister()
-        self.arm_status_sub.unregister()
+        self.wheel_status_sub.unregister()
 
     def stop(self):
         try:
@@ -185,7 +185,7 @@ class Arm:
     # XXX: this is work in progress and completely broken
     # look at mattia's thesis
     def compute_transfer_function(self, range_front, range_post, req_height, joint_state_out_pub, tf_listener, tf_broadcaster):
-        rospy.loginfo("Getting transfer function for arm #%d..." % self.index)
+        rospy.loginfo("Getting transfer function for wheel #%d..." % self.index)
 
         deltaH_chassis = 0.0
         self.deltaH_inertial = 0.0
@@ -309,7 +309,7 @@ class Arm:
                 rospy.logwarn("Limite coppia su %i!", self.index)
                 phi = phi + 0.1
 
-            self.command_arm_pub.publish(phi)
+            self.command_wheel_pub.publish(phi)
 
             if self.torque > TORQUE_MAX_LOAD:
                 time.sleep(0.5)
@@ -326,7 +326,7 @@ class Arm:
                 phi = 1.00
 
             rospy.logdebug("Coppia motore %i %f -> comando posizione %f", self.index, self.torque, phi)
-            self.command_arm_pub.publish(phi)
+            self.command_wheel_pub.publish(phi)
 
             self.joint_state_out.name = [ "hub_%s_virtuale" % self.location ]
             self.joint_state_out.position = [ phi ]

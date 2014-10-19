@@ -29,7 +29,7 @@ from suspension_controller.msg import Status
 from suspension_controller.SuspensionMode import SuspensionMode
 from suspension_controller.Modes import BaseMode, Observer, Follower, Simulation, WithAntilift, WithAntiliftAndFollower, WithFollower
 
-from suspension_controller.Arm import Arm
+from suspension_controller.Wheel import Wheel
 
 from suspension_controller.constants.config import INIT_ADC_WAIT_PERIOD
 
@@ -58,7 +58,7 @@ class SuspensionController:
         self.mode = 0
         self.freeze = False
 
-        self.arms = [ Arm(1), Arm(2), Arm(3), Arm(4) ]
+        self.wheels = [ Wheel(1), Wheel(2), Wheel(3), Wheel(4) ]
 
         rospy.loginfo("INIT")
 
@@ -73,8 +73,8 @@ class SuspensionController:
         '''
         This function starts all ROS publishers, services, subscribers, listeners and broadcasters. This function needs to be called early in the initialization process.
         '''
-        for arm in self.arms:
-            arm.publish()
+        for wheel in self.wheels:
+            wheel.publish()
 
         self.joint_state_out_pub = rospy.Publisher('/joint_states', JointState)
         self.status_asm_pub = rospy.Publisher('/status_asm', Status)
@@ -99,8 +99,8 @@ class SuspensionController:
         '''
         This function stops all ROS publishers, services, subscribers, listeners and broadcasters. This function needs to be called early in the initialization process.when the node is stopped.
         '''
-        for arm in self.arms:
-            arm.unpublish()
+        for wheel in self.wheels:
+            wheel.unpublish()
 
         self.joint_state_out_pub.unregister()
         self.status_asm_pub.unregister()
@@ -144,8 +144,8 @@ class SuspensionController:
         '''
         responses = []
         res = True
-        for arm in self.arms:
-            resp = arm.stop()
+        for wheel in self.wheels:
+            resp = wheel.stop()
             # if we have failed to stop one of them, save it to avoid bitwise AND, but still try to stop the others
             if resp is None:
                 res = False
@@ -174,11 +174,11 @@ class SuspensionController:
         return self.freeze
 
 
-    def test_arms(self, init_pos_high=True):
+    def test_wheels(self, init_pos_high=True):
         rospy.loginfo("Testing wheels with initial position high? %b", init_pos_high)
 
-        for arm in self.arms:
-            arm.test_wheel(init_pos_high)
+        for wheel in self.wheels:
+            wheel.test_wheel(init_pos_high)
 
 
     def diagnostics_processor(self):
@@ -194,17 +194,17 @@ class SuspensionController:
 
 
     def read_suspension_angles(self, msg):
-        for arm in self.arms:
-            arm.read_suspension_angle(msg)
+        for wheel in self.wheels:
+            wheel.read_suspension_angle(msg)
 
 
     # TODO: check that this does what it's supposed to do
     def get_tf(self):
         rospy.loginfo("get TF")
-        for arm in self.arms:
-            arm.compute_transfer_function(self.range_front, self.range_post, self.req_height, self.joint_state_out_pub, self.tf_listener, self.tf_broadcaster)
-            self.deltaH_chassis_virtuale = arm.deltaH_chassis_virtuale
-            self.chassis_angles = arm.chassis_angles
+        for wheel in self.wheels:
+            wheel.compute_transfer_function(self.range_front, self.range_post, self.req_height, self.joint_state_out_pub, self.tf_listener, self.tf_broadcaster)
+            self.deltaH_chassis_virtuale = wheel.deltaH_chassis_virtuale
+            self.chassis_angles = wheel.chassis_angles
 
 
     def calculate_phi(self):
@@ -212,39 +212,39 @@ class SuspensionController:
         pitch = self.chassis_angles[1]
         limit = 0.05
 
-        for arm in self.arms:
+        for wheel in self.wheels:
             if fabs(pitch) > limit or fabs(roll) > limit or fabs(self.deltaH_chassis_virtuale) > limit:
-                arm.publish_phi(self.joint_state_out_pub)
+                wheel.publish_phi(self.joint_state_out_pub)
 
 
     def output_phi(self):
-        for arm in self.arms:
-            arm.publish_phi()
+        for wheel in self.wheels:
+            wheel.publish_phi()
 
 
     def pull_down(self):
-        for arm in self.arms:
-            arm.pull_down()
+        for wheel in self.wheels:
+            wheel.pull_down()
 
 
     def follower(self):
         limit = 0.03
 
-        for arm in self.arms:
-            arm.delta_follower(limit)
+        for wheel in self.wheels:
+            wheel.delta_follower(limit)
 
 
     # TODO: inserire is_moving ed abilitare il reset del filtro
     # TODO: inserire temperature e lettura delle stesse
     def update_status(self):
-        for arm in self.arms:
-            arm.update_status(self.status_asm)
+        for wheel in self.wheels:
+            wheel.update_status(self.status_asm)
 
         self.status_asm.command_height = self.req_height - 0.05
 
         deltaH_inertial = []
-        for arm in self.arms:
-            deltaH_inertial.append(arm.deltaH_inertial)
+        for wheel in self.wheels:
+            deltaH_inertial.append(wheel.deltaH_inertial)
 
         self.status_asm.inertial_height = max(deltaH_inertial)
 
