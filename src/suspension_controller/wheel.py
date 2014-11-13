@@ -35,6 +35,7 @@ class Wheel:
         self.error = 0.0  # was self.error_arm
         self.motor_temp = 0.0
         self.delta = 0.0
+        self.Z_route = 0.0
 
         self.suspension_angle = 0.0  # was self.angoli_sosp
 
@@ -99,23 +100,23 @@ class Wheel:
         return None
 
     def update_status(self, status):
-        getattr(status, "pos_%d" % self.index)(self.position)
+        setattr(status, "pos_%d" % self.index, self.position)
 
-        getattr(status, "motor_pos_%d" % self.index)(self.position + self.error)
+        setattr(status, "motor_pos_%d" % self.index, self.position + self.error)
 
-        getattr(status, "command_%d" % self.index)(self.phi)
-        getattr(status, "delta_%d" % self.index)(self.phi + self.delta)
+        setattr(status, "command_%d" % self.index, self.phi)
+        setattr(status, "delta_%d" % self.index, self.phi + self.delta)
 
         # TODO: What is self.Z_route?!
-        getattr(status, "height_%d" % self.index)(self.Z_route)
+        setattr(status, "height_%d" % self.index, self.Z_route)
 
-        getattr(status, "motor_temp_%d" % self.index)(self.motor_temp)
+        setattr(status, "motor_temp_%d" % self.index, self.motor_temp)
 
-        getattr(status, "load_%d" % self.index)(self.torque)
+        setattr(status, "load_%d" % self.index, self.torque)
 
-        getattr(status, "pull_down_%d" % self.index)(self.pull_down_sts)
+        setattr(status, "pull_down_%d" % self.index, self.pull_down_sts)
 
-        getattr(status, "out_of_range_%d" % self.index)(self.out_of_range_sts)
+        setattr(status, "out_of_range_%d" % self.index, self.out_of_range_sts)
         status.roll = self.chassis_angles[0]
         status.pitch = self.chassis_angles[1]
         status.current_height = self.computed_height - 0.05
