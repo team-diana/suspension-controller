@@ -1,5 +1,0 @@
-package created by  Austin Hendrix <ahendrix AT willowgarage DOT
-com>
-and  Maintained by Wim Meeussen
-License: BSD
-Source: git https://github.com/PR2/pr2_robot.git 
