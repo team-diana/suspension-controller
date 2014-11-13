@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # This file is released under a 3-clause BSD license, for
 # more details, please consult the LICENSE file.
