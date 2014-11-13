@@ -19,15 +19,15 @@ class SuspensionMode:
         return getattr(self.__mode, name)
 
 class BaseMode:
-    def __init__(self, node):
-        self.node = node
+    def __init__(self):
         raise Exception("Cannot instantiate object directly, use one of its sub-classes!")
 
     def run(self):
         raise Exception("Function not implemented!")
 
 class Simulation(BaseMode):
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         self.name = "Simulation"
         self.name_it = "Simulazione"
         self.index = 0
@@ -37,7 +37,8 @@ class Simulation(BaseMode):
         self.node.calculate_phi()
 
 class Follower(BaseMode):
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         self.name = "Follower"
         self.name_it = "Inseguitore"
         self.index = 1
@@ -49,7 +50,8 @@ class Follower(BaseMode):
         self.node.output_phi()
 
 class Observer(BaseMode):
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         self.name = "Observer"
         self.name_it = "Osservatore"
         self.index = 2
@@ -62,7 +64,8 @@ class Observer(BaseMode):
         self.node.output_phi()
 
 class WithAntilift(BaseMode):
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         self.name = "Observer with anti-lift control"
         self.name_it = "Osservatore con antisollevamento"
         self.index = 3
@@ -75,7 +78,8 @@ class WithAntilift(BaseMode):
         self.node.output_phi()
 
 class WithFollower(BaseMode):
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         self.name = "Observer with follower control"
         self.name_it = "Osservatore con inseguitore"
         self.index = 0
@@ -88,7 +92,8 @@ class WithFollower(BaseMode):
         self.node.output_phi()
 
 class WithAntiliftAndFollower(BaseMode):
-    def __init__(self):
+    def __init__(self, node):
+        self.node = node
         self.name = "Observer with anti-lift and follower control"
         self.name_it = "Osservatore con antisollevamento e inseguitore"
         self.index = 0
