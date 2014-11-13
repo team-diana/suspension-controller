@@ -84,7 +84,7 @@ class SuspensionController:
 
         self.service_height = rospy.Service('suspension_controller/set_height', SetHeight, self.handle_set_height)
         self.service_mode = rospy.Service('suspension_controller/set_mode', SetMode, self.handle_set_mode)
-        self.service_stop = rospy.Service('suspension_controller/stop_all', StopAll, self.handle_stopAll)
+        self.service_stop = rospy.Service('suspension_controller/stop_all', StopAll, self.handle_stop_all)
         self.service_freeze = rospy.Service('suspension_controller/freeze', Freeze, self.handle_freeze)
 
         self.tf_listener = tf.TransformListener()
