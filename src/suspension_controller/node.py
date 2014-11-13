@@ -30,7 +30,7 @@ from suspension_controller.suspension_modes import BaseMode, Observer, Follower,
 
 from suspension_controller.wheel import Wheel
 
-from suspension_controller.constants.config import INIT_ADC_WAIT_PERIOD
+from suspension_controller.constants import config
 
 class SuspensionController:
     def __init__(self):
@@ -62,7 +62,7 @@ class SuspensionController:
         rospy.loginfo("INIT")
 
         # TODO: Figure out a better way to wait for valid messages from the ADC
-        time.sleep(INIT_ADC_WAIT_PERIOD)
+        time.sleep(config.INIT_ADC_WAIT_PERIOD)
 
         self.publish()
         self.start()

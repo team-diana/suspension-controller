@@ -24,11 +24,11 @@ from std_msgs.msg import Float64
 from dynamixel_controllers.srv import SetTorque
 from suspension_controller.srv import Freeze, SetMode, SetHeight, StopAll
 
-from suspension_controller.constants.config import MAX_PHI_ANGLE, MIN_PHI_ANGLE, MAX_WHEEL_ANGLE, MIN_WHEEL_ANGLE, TEST_LOCKING_DELAY, TEST_SLEEP_DELAY, TORQUE_MAX_LOAD, TORQUE_SAMPLE_SIZE
+from suspension_controller.constants import config
 
 class Wheel:
     def __init__(self, index):
-        self.torquef = [0] * TORQUE_SAMPLE_SIZE
+        self.torquef = [0] * config.TORQUE_SAMPLE_SIZE
         self.pointer = 0
         self.torque = 0.0
         self.position = 0.0  # was self.pos_arm
@@ -63,7 +63,7 @@ class Wheel:
     def read_wheel_data(self, msg):
         self.torquef[self.pointer] = msg.load
 
-        if self.pointer == TORQUE_SAMPLE_SIZE - 1:
+        if self.pointer == config.TORQUE_SAMPLE_SIZE - 1:
             self.pointer = 0
         else:
             self.pointer += 1
@@ -146,7 +146,7 @@ class Wheel:
         self.command_pub.publish(angle)
         rospy.loginfo("Tested moving wheel %d", self.index)
 
-        time.sleep(TEST_SLEEP_DELAY);
+        time.sleep(config.TEST_SLEEP_DELAY);
 
         if init_pos_high:
             ang_p = 0.5
@@ -163,7 +163,7 @@ class Wheel:
         self.command_tor_pub.publish(angle)
         rospy.loginfo("Tested stepping of wheel %d", self.index)
 
-        time.sleep(TEST_SLEEP_DELAY);
+        time.sleep(config.TEST_SLEEP_DELAY);
 
         if init_pos_high:
             ang_p = pi
@@ -180,7 +180,7 @@ class Wheel:
         rospy.loginfo("Testing locking of wheel %d", self.index)
         for _ in range(0, 7):
             self.command_pub.publish(angle)
-            time.sleep(TEST_LOCKING_DELAY)
+            time.sleep(config.TEST_LOCKING_DELAY)
 
     # XXX: this is work in progress and completely broken
     # look at mattia's thesis
@@ -279,9 +279,9 @@ class Wheel:
             rospy.logwarn("out_of_range on wheel %i", self.index)
             # TODO: What is the if statement trying to do?
             if ((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote) / 0.20) > 1.:
-                self.phi = MIN_WHEEL_ANGLE
+                self.phi = config.MIN_WHEEL_ANGLE
             elif ((self.posa_chassis_virtuale[2] - 0.011 - self.Z_ruote) / 0.20) < 0.:
-                self.phi = MAX_WHEEL_ANGLE
+                self.phi = config.MAX_WHEEL_ANGLE
 
         joint_state_out = JointStateOut()
 
@@ -296,22 +296,22 @@ class Wheel:
     def publish_phi(self):
         if (self.pull_down_sts == False):
             phi = self.phi + self.delta
-            if phi < MIN_PHI_ANGLE:
-                phi = MIN_PHI_ANGLE
+            if phi < config.MIN_PHI_ANGLE:
+                phi = config.MIN_PHI_ANGLE
                 self.out_of_range_sts = True
-            elif phi > MAX_PHI_ANGLE:
-                phi = MAX_PHI_ANGLE
+            elif phi > config.MAX_PHI_ANGLE:
+                phi = config.MAX_PHI_ANGLE
                 self.out_of_range_sts = True
             else:
                 self.out_of_range_sts = False
 
-            if self.torque > TORQUE_MAX_LOAD:
+            if self.torque > config.TORQUE_MAX_LOAD:
                 rospy.logwarn("Limite coppia su %i!", self.index)
                 phi = phi + 0.1
 
             self.command_wheel_pub.publish(phi)
 
-            if self.torque > TORQUE_MAX_LOAD:
+            if self.torque > config.TORQUE_MAX_LOAD:
                 time.sleep(0.5)
 
 
@@ -319,10 +319,10 @@ class Wheel:
         if self.torque < 0.1:
             self.pull_down_sts = True
             phi = self.position - 0.5
-            if phi < MIN_PHI_ANGLE:
-                phi = MIN_PHI_ANGLE
-            elif phi > MAX_PHI_ANGLE:
-                # XXX: Shouldn't this be MAX_PHI_ANGLE?
+            if phi < config.MIN_PHI_ANGLE:
+                phi = config.MIN_PHI_ANGLE
+            elif phi > config.MAX_PHI_ANGLE:
+                # XXX: Shouldn't this be config.MAX_PHI_ANGLE?
                 phi = 1.00
 
             rospy.logdebug("Coppia motore %i %f -> comando posizione %f", self.index, self.torque, phi)
