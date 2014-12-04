@@ -213,7 +213,7 @@ class SuspensionController:
 
         for wheel in self.wheels:
             if fabs(pitch) > limit or fabs(roll) > limit or fabs(self.deltaH_chassis_virtuale) > limit:
-                wheel.publish_phi()
+                wheel.compute_phi(self.joint_state_out_pub)
 
 
     def output_phi(self):

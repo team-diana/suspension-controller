@@ -48,6 +48,8 @@ class Wheel:
 
         self.computed_height = 0.0 # was self.altezza
 
+	self.posa_chassis_virtuale = [0.0, 0.0, 0.0]
+
         # This might be needed
         self.index = index
         if self.index == 1:
@@ -75,7 +77,7 @@ class Wheel:
         self.pistion = msg.current_pos
         self.error = msg.error
 
-        self.motor_temp = int(msg.motor_temps[self.index - 1])
+        self.motor_temp = int(msg.motor_temps[0])
 
     def publish(self):
         self.command_pub = rospy.Publisher('/motore_%d_controller/command' % self.index, Float64)
