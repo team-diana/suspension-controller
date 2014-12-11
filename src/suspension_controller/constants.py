@@ -8,8 +8,8 @@ class _const:
     def __init__(self):
         # add constants here:
         self.INIT_ADC_WAIT_PERIOD = 2
-        self.MAX_PHI_ANGLE = 1.21
-        self.MIN_PHI_ANGLE = 0.40
+        self.MAX_PHI_ANGLE = 1
+        self.MIN_PHI_ANGLE = -1
         self.MIN_WHEEL_ANGLE = 0.39
         self.MAX_WHEEL_ANGLE = 1.22
         self.TEST_LOCKING_DELAY = 0.1
